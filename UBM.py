@@ -30,7 +30,30 @@ class SpeakerRecognizer():
         self.test_dir = os.path.join(self.base_dir, "test")
 
 
-    
+    def preprocess(self):
+        """
+        In 
+        As mentioned in the pervious section, datasets are managed using IdMap, Key and Ndx.
+        There are many ways of making lists of dataset, often defined by the structure of the
+        chosen dataset. For simplicity, let us assume that all the data is pre-organized in designated folders for UBM training data, enrollment data, test data, and normalization data,
+        respectively1. We further assume that each audio file has the following name structure.
+        “<gender><speaker> <session> <sentence>.ext”, where,
+        • gender is a letter indicating the gender of the speaker, f if the speaker is female, m
+        if male.
+        • speaker is a ID-number of the speaker.
+        • session is the ID-number of the session.
+        • sentence is the ID-number of the sentence.
+        • ext is the file extension.
+        """
+        if not os.path.exists(self.wav_dir):
+            os.mkdir(self.wav_dir)
+        for filename in tqdm(self.all_files, total=len(self.all_files), desc="Audio Preprocessing"):
+            preprocessAudioFile(os.path.join(self.input_dir, filename),
+                                os.path.join(self.wav_dir, filename),
+                                self.SAMPLE_RATE,
+                                self.NUM_CHANNELS,
+                                self.PRECISION)
+
 
     def extractFeatures(self):
         if not os.path.exists(self.wav_dir):
