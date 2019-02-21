@@ -4,3 +4,6 @@ lib
 man
 share
 audio
+__pycache__
+*.pyc
+
