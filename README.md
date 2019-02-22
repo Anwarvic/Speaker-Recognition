@@ -1,4 +1,4 @@
-#Speaker Verification using SideKit
+# Speaker Recognition/Verification using SideKit
 
 ## Installation
 To run SIDEKIT on your machine, you need to install:
