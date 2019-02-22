@@ -131,8 +131,8 @@ def copyData(inDir, outDir, enrollIDs, testIDs):
     ############################## TEST ##############################
     ##################################################################
     #iterate over speakers
+    # NOTE: speakers here are enrolled speakers + other speakers
     test_outDir = os.path.join(outDir, "test")
-    #NOTE: speakers here are enrolled speakers + other speakers
     if not os.path.exists(test_outDir):
         os.mkdir(test_outDir)
     for speakerID in tqdm(enrollIDs+testIDs, desc="Testing Files"):

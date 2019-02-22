@@ -33,16 +33,16 @@ def create_idMap(save_flag=True):
     start and stop time of the segment and to initialize a StatServer.
     """
     # Make ubm file list
-    data_dir = os.path.join(INDIR, "audio", "data") # train directory
-    data_files = os.listdir(data_dir)
-    # Remove extension and add path prefix
-    data_files = ["train/"+f.split('.')[0] for f in data_files]
+    # data_dir = os.path.join(INDIR, "audio", "data") # data directory
+    # data_files = os.listdir(data_dir)
+    # # Remove extension and add path prefix
+    # data_files = ["data/"+f for f in data_files]
 
     # Make enrollment (IdMap) file list
     enroll_dir = os.path.join(INDIR, "audio", "enroll") # enrollment data directory
     enroll_files = os.listdir(enroll_dir)
     enroll_models = [files.split('_')[0] for files in enroll_files] # list of model IDs
-    enroll_segments = ["enroll/"+f.split('.')[0] for f in enroll_files]
+    enroll_segments = ["enroll/"+f for f in enroll_files]
     
     # Generate IdMap
     enroll_idmap = sidekit.IdMap()
@@ -60,7 +60,7 @@ def create_idMap(save_flag=True):
 
 
 
-def create_Ndx(enroll_models):
+def create_test_trials(enroll_models):
     """
     Ndx objects store trials index information, i.e., combination of 
     model and segment IDs that should be evaluated by the system which 
@@ -73,7 +73,7 @@ def create_Ndx(enroll_models):
     # Make list of test segments
     test_data_dir = os.path.join(INDIR, "audio", "test") # test data directory
     test_files = os.listdir(test_data_dir)
-    test_files = ["test/"+f.split('.')[0] for f in test_files]
+    test_files = ["test/"+f for f in test_files]
 
     # Make lists for trial definition, and write to file
     test_models = []
@@ -91,13 +91,13 @@ def create_Ndx(enroll_models):
             else:
                 test_labels.append('nontarget')
         
-    with open(os.path.join(TASK_DIR, "trial_definition.txt"), "w") as fh:
+    with open(os.path.join(TASK_DIR, "test_trials.txt"), "w") as fh:
         for i in range(len(test_models)):
             fh.write(test_models[i]+' '+test_segments[i]+' '+test_labels[i]+'\n')
 
 
 
-def create_key(save_flag = True):
+def create_Ndx(save_flag = True):
     """
     Key are used to store information about which trial is a target trial
     and which one is a non-target (or impostor) trial. tar(i,j) is true
@@ -105,13 +105,15 @@ def create_key(save_flag = True):
     if the test between model i and segment j is non-target.
     """
     # Define Key and Ndx from text file
-    key = sidekit.Key.read_txt(os.path.join(TASK_DIR, "trial_definition.txt"))
+    # SEE: https://projets-lium.univ-lemans.fr/sidekit/_modules/sidekit/bosaris/key.html
+    key = sidekit.Key.read_txt(os.path.join(TASK_DIR, "test_trials.txt"))
+    
     ndx = key.to_ndx()
     if save_flag:
-        ndx.write(os.path.join(TASK_DIR, 'key.h5'))
+        ndx.write(os.path.join(TASK_DIR, 'test_ndx.h5'))
 
 
 if __name__ == "__main__":
     enroll_speakers = set(create_idMap()) #unique speaker IDs
-    create_Ndx(sorted(list(enroll_speakers)))
-    create_key()
+    create_test_trials(sorted(list(enroll_speakers)))
+    create_Ndx()
