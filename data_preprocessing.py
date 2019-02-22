@@ -90,7 +90,7 @@ def copyFiles(inDir, outDir, gender, speakerID, start, end):
             newWavFilename = "{}_{}_{}.wav".format(gender+speakerID, rep, wordID)
             inWav = os.path.join(inDir, speakerID, wavFilename)
             outWav = os.path.join(outDir, newWavFilename)
-            preprocessAudioFile(inWav, outWav, sample_rate=16000, n_channels=2, bit=16)
+            preprocessAudioFile(inWav, outWav, sample_rate=16000, n_channels=1, bit=16)
 
 
 
@@ -157,6 +157,6 @@ if __name__ == "__main__":
     #Split speakers to 80% enroll, and 20% test
     enrollIDs, testIDs = splitSpeakers(ENROLL_NUM, TEST_NUM)
     print(enrollIDs) #[2, 35, 39, 1, 22, 25, 16, 14, 8, 30]
-    print(testIDs) #[47, 50, 49, 6, 45]
+    print(testIDs)   #[47, 50, 49, 6, 45]
     #copy the data from INDIR to OUTDIR
     copyData(INDIR, OUTDIR, enrollIDs, testIDs)
