@@ -106,33 +106,39 @@ def copyData(inDir, outDir, enrollIDs, testIDs):
     ############################## Data #############################
     ##################################################################
     #iterate over speakers
-    # dataIDs = set(range(1, 51)) - EXCLUDED_IDS
-    # for speakerID in tqdm(dataIDs, desc="Whole Data"):
-    #     speakerID = "S"+str(speakerID).zfill(2)
-    #     start = 1
-    #     end = 10+1
-    #     data_outDir = os.path.join(outDir, "data")
-    #     copyFiles(inDir, data_outDir, gender, speakerID, start, end)
+    dataIDs = set(range(1, 51)) - EXCLUDED_IDS
+    data_outDir = os.path.join(outDir, "data")
+    if not os.path.exists(data_outDir):
+        os.mkdir(data_outDir)
+    for speakerID in tqdm(dataIDs, desc="Whole Data"):
+        speakerID = "S"+str(speakerID).zfill(2)
+        start = 1
+        end = 10+1
+        copyFiles(inDir, data_outDir, gender, speakerID, start, end)
     ##################################################################
     ############################# ENROLL #############################
     ##################################################################
     #iterate over speakers
-    # for speakerID in tqdm(enrollIDs, desc="Enroll Speakers"):
-    #     speakerID = "S"+str(speakerID).zfill(2)
-    #     start = 1
-    #     end = ENROLL_REPS+1
-    #     enroll_outDir = os.path.join(outDir, "enroll")
-    #     copyFiles(inDir, enroll_outDir, gender, speakerID, start, end)
+    enroll_outDir = os.path.join(outDir, "enroll")
+    if not os.path.exists(enroll_outDir):
+        os.mkdir(enroll_outDir)
+    for speakerID in tqdm(enrollIDs, desc="Enroll Speakers"):
+        speakerID = "S"+str(speakerID).zfill(2)
+        start = 1
+        end = ENROLL_REPS+1
+        copyFiles(inDir, enroll_outDir, gender, speakerID, start, end)
     ##################################################################
     ############################## TEST ##############################
     ##################################################################
     #iterate over speakers
+    test_outDir = os.path.join(outDir, "test")
     #NOTE: speakers here are enrolled speakers + other speakers
+    if not os.path.exists(test_outDir):
+        os.mkdir(test_outDir)
     for speakerID in tqdm(enrollIDs+testIDs, desc="Testing Files"):
         speakerID = "S"+str(speakerID).zfill(2)
         start = ENROLL_REPS+1
         end = ENROLL_REPS+TEST_REPS+1
-        test_outDir = os.path.join(outDir, "test")
         copyFiles(inDir, test_outDir, gender, speakerID, start, end)
 
     
@@ -150,7 +156,7 @@ if __name__ == "__main__":
         os.mkdir(OUTDIR)
     #Split speakers to 80% enroll, and 20% test
     enrollIDs, testIDs = splitSpeakers(ENROLL_NUM, TEST_NUM)
-    print(enrollIDs)
-    print(testIDs)
+    print(enrollIDs) #[2, 35, 39, 1, 22, 25, 16, 14, 8, 30]
+    print(testIDs) #[47, 50, 49, 6, 45]
     #copy the data from INDIR to OUTDIR
     copyData(INDIR, OUTDIR, enrollIDs, testIDs)
