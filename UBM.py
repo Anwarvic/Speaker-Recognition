@@ -19,7 +19,7 @@ class SpeakerRecognizer():
         # self.SAMPLE_RATE = 16000
         self.NUM_CHANNELS = 2
         self.PRECISION = 16 #I mean 16-bit
-        self.NUM_THREADS = mp.cpu_count() #(4 default)
+        self.NUM_THREADS = 0#mp.cpu_count() #(4 default)
         # Number of Guassian Distributions
         self.NUM_GUASSIANS = 32
         self.base_dir = "/media/anwar/E/Voice_Biometrics/SIDEKIT-1.3/py3env"
@@ -91,7 +91,6 @@ class SpeakerRecognizer():
         print("Number of skipped:", len(SKIPPED))
         for show in SKIPPED:
             print(show)
-
         #BUG: The following lines do the exact same thing
         # as the few ones above, but with using multi-processing where
         # num_thread: is the number of parallel process to run
@@ -183,11 +182,11 @@ class SpeakerRecognizer():
         ##################################################################
         ############################ CREATING ############################
         ##################################################################
-        # Create StatServer to load the enrollment data
+        # Create Statistic Server to store/process the enrollment data
         enroll_stat = sidekit.StatServer(statserver_file_name=enroll_idmap,
-                                         distrib_nb=self.NUM_GUASSIANS,
-                                         feature_size=100)
-        # Compute the sufficient statistics
+                                         ubm=ubm)
+        print(enroll_stat)
+        # Compute the sufficient statistics for a list of sessions whose indices are segIndices.
         enroll_stat.accumulate_stat(ubm=ubm,
                                     feature_server=server,
                                     seg_indices=range(enroll_stat.segset.shape[0]),
@@ -197,7 +196,7 @@ class SpeakerRecognizer():
         # MAP adaptation of enrollment speaker models
         enroll_sv = enroll_stat.adapt_mean_map_multisession(ubm=ubm,
                                                             r=3 # MAP regulation factor
-                                                            )
+                                                           )
         # Compute scores
         scores_gmm_ubm = sidekit.gmm_scoring(ubm=ubm,
                                              enroll=enroll_sv,
