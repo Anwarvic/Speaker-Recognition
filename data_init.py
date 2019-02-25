@@ -83,7 +83,7 @@ def create_test_trials(enroll_models):
     for model in tqdm(enroll_models, desc="Processing enrolled-speakers"):
         for segment in sorted(test_files):
             test_model = segment.split("_")[0].split("/")[-1]
-            test_models.append(test_model)
+            test_models.append(model)
             test_segments.append(segment)
             # Compare gender and speaker ID for each test file
             if test_model == model:
@@ -114,6 +114,6 @@ def create_Ndx(save_flag = True):
 
 
 if __name__ == "__main__":
-    # enroll_speakers = set(create_idMap()) #unique speaker IDs
-    # create_test_trials(sorted(list(enroll_speakers)))
+    enroll_speakers = set(create_idMap()) #unique speaker IDs
+    create_test_trials(sorted(list(enroll_speakers)))
     create_Ndx()

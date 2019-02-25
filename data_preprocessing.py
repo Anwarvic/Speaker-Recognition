@@ -103,6 +103,7 @@ def copyData(inDir, outDir, enrollIDs, testIDs):
     test data will be in 'test'.
     """
     gender = "M" #since they're all male
+    ##################################################################
     ############################## Data #############################
     ##################################################################
     #iterate over speakers

@@ -19,8 +19,8 @@ class SpeakerRecognizer():
     def __init__(self):
         ############ Global Variables ###########
         # self.SAMPLE_RATE = 16000
-        self.NUM_CHANNELS = 2
-        self.PRECISION = 16 #I mean 16-bit
+        # self.NUM_CHANNELS = 1
+        # self.PRECISION = 16 #I mean 16-bit
         self.NUM_THREADS = 0#mp.cpu_count()
         # Number of Guassian Distributions
         self.NUM_GUASSIANS = 32
@@ -123,7 +123,7 @@ class SpeakerRecognizer():
                                         double_delta=True,
                                         rasta=True,
                                         keep_all_features=True)
-        logging.info(server)
+        logging.debug(server)
         return server
 
 
@@ -157,37 +157,14 @@ class SpeakerRecognizer():
         # -> 8 iterations of EM with 256 distributions
         # -> 8 iterations of EM with 512 distributions
         # -> 8 iterations of EM with 1024 distributions
-
         model_dir = os.path.join(self.base_dir, "ubm")
         if SAVE_FLAG:
             modelname = "ubm_{}.h5".format(self.NUM_GUASSIANS)
             logging.info("Saving the model {} at {}".format(modelname, model_dir))
             ubm.write(os.path.join(model_dir, modelname))
-
-
-
-    def evaluate(self):
-        ##################################################################
-        ############################# READING ############################
-        ##################################################################
-        # Create Feature server
-        server = self.__createFeatureServer()
+        
         # Read idmap for the enrolling data
         enroll_idmap = sidekit.IdMap.read(os.path.join(self.base_dir, "task", "idmap_enroll.h5"))
-        # Reading the key
-        key = sidekit.Key.read_txt(os.path.join(self.base_dir, "task", "test_trials.txt"))
-        # return
-        # Read the index for the test datas
-        test_ndx = sidekit.Ndx.read(os.path.join(self.base_dir, "task", "test_ndx.h5"))
-        # Read the UBM model
-        ubm = sidekit.Mixture()
-        model_name = "ubm_{}.h5".format(self.NUM_GUASSIANS)
-        ubm.read(os.path.join(self.base_dir, "ubm", model_name))
-        # Create Feature Extractor
-        feat_dir = os.path.join(self.base_dir, "feat")
-        ##################################################################
-        ############################ CREATING ############################
-        ##################################################################
         # Create Statistic Server to store/process the enrollment data
         enroll_stat = sidekit.StatServer(statserver_file_name=enroll_idmap,
                                          ubm=ubm)
@@ -198,8 +175,31 @@ class SpeakerRecognizer():
                                     seg_indices=range(enroll_stat.segset.shape[0]),
                                     num_thread=self.NUM_THREADS
                                    )
-        # Save the status of the enroll data
-        enroll_stat.write(os.path.join(self.base_dir, "task", "enroll_stat.h5"))
+        if SAVE_FLAG:
+            # Save the status of the enroll data
+            enroll_stat.write(os.path.join(self.base_dir, "task", "enroll_stat.h5"))
+
+
+
+    def evaluate(self):
+        ##################################################################
+        ############################# READING ############################
+        ##################################################################
+        # Create Feature server
+        server = self.__createFeatureServer()
+        # Reading the key
+        key = sidekit.Key.read_txt(os.path.join(self.base_dir, "task", "test_trials.txt"))
+        # return
+        # Read the index for the test datas
+        test_ndx = sidekit.Ndx.read(os.path.join(self.base_dir, "task", "test_ndx.h5"))
+        # Read the UBM model
+        ubm = sidekit.Mixture()
+        model_name = "ubm_{}.h5".format(self.NUM_GUASSIANS)
+        ubm.read(os.path.join(self.base_dir, "ubm", model_name))
+        ##################################################################
+        ############################ CREATING ############################
+        ##################################################################
+        enroll_stat = sidekit.StatServer.read(os.path.join(self.base_dir, "task", "enroll_stat.h5"))
         # MAP adaptation of enrollment speaker models
         enroll_sv = enroll_stat.adapt_mean_map_multisession(ubm=ubm,
                                                             r=3 # MAP regulation factor
@@ -212,7 +212,7 @@ class SpeakerRecognizer():
                                             #  num_thread=self.NUM_THREADS
                                             )
         # Save the model's Score object
-        scores_gmm_ubm.write(os.path.join(self.base_dir, "ubm", "test_scores.h5"))
+        scores_gmm_ubm.write(os.path.join(self.base_dir, "result", "test_scores.h5"))
         ##################################################################
         ############################ CREATING ############################
         ##################################################################
@@ -226,7 +226,7 @@ class SpeakerRecognizer():
         dp.plot_mindcf_point(prior, idx=0)
 
         dp.__figure__.show() # Display figure
-        dp.__figure__.savefig(os.path.join(self.base_dir, "DET_GMM_UBM.png"))
+        dp.__figure__.savefig(os.path.join(self.base_dir, "result", "DET_GMM_UBM.png"))
 
 
 
