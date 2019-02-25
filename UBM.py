@@ -187,9 +187,6 @@ class SpeakerRecognizer():
         ##################################################################
         # Create Feature server
         server = self.__createFeatureServer()
-        # Reading the key
-        key = sidekit.Key.read_txt(os.path.join(self.base_dir, "task", "test_trials.txt"))
-        # return
         # Read the index for the test datas
         test_ndx = sidekit.Ndx.read(os.path.join(self.base_dir, "task", "test_ndx.h5"))
         # Read the UBM model
@@ -213,21 +210,25 @@ class SpeakerRecognizer():
                                             )
         # Save the model's Score object
         scores_gmm_ubm.write(os.path.join(self.base_dir, "result", "test_scores.h5"))
-        ##################################################################
-        ############################ CREATING ############################
-        ##################################################################
+        
+
+    def plotDETcurve(self):
+        # Read test scores
+        scores_dir = os.path.join(self.base_dir, "result", "test_scores.h5")
+        scores_gmm_ubm = sidekit.Scores.read(scores_dir)
+        # Read the key
+        key = sidekit.Key.read_txt(os.path.join(self.base_dir, "task", "test_trials.txt"))
+
         # Make DET plot
-        prior = sidekit.logit_effective_prior(0.01, 10, 1)
+        logging.info("Drawing DET Curve")
         dp = sidekit.DetPlot(window_style='sre10', plot_title='Scores GMM-UBM')
         dp.create_figure()
         dp.set_system_from_scores(scores_gmm_ubm, key, sys_name='GMM-UBM')
         dp.plot_rocch_det()
         dp.plot_DR30_both(idx=0)
+        prior = sidekit.logit_effective_prior(0.01, 10, 1)
         dp.plot_mindcf_point(prior, idx=0)
-
-        dp.__figure__.show() # Display figure
         dp.__figure__.savefig(os.path.join(self.base_dir, "result", "DET_GMM_UBM.png"))
-
 
 
 
@@ -238,4 +239,5 @@ if __name__ == "__main__":
     # ubm.extractFeatures("enroll")
     # ubm.extractFeatures("test")
     # ubm.train()
-    ubm.evaluate()
+    # ubm.evaluate()
+    ubm.plotDETcurve()
