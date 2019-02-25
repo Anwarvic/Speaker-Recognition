@@ -31,6 +31,9 @@ import warnings
 import multiprocessing
 import ctypes
 import logging
+#ANWAR (ADD)
+from threading import Thread
+#END
 
 import sidekit.sv_utils
 import sidekit.frontend
@@ -163,7 +166,10 @@ def gmm_scoring(ubm, enroll, ndx, feature_server, num_thread=1):
     los = numpy.array_split(numpy.arange(clean_ndx.segset.shape[0]), num_thread)
     jobs = []
     for idx in los:
-        p = multiprocessing.Process(target=gmm_scoring_singleThread, args=(ubm, enroll, ndx, feature_server, s, idx))
+        #ANWAR (add)
+        p = Thread(target=gmm_scoring_singleThread, args=(ubm, enroll, ndx, feature_server, s, idx))
+        #END
+        # p = multiprocessing.Process()
         jobs.append(p)
         p.start()
     for p in jobs:
