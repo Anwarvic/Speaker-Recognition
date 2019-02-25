@@ -94,7 +94,7 @@ def gmm_scoring_singleThread(ubm, enroll, ndx, feature_server, score_mat, seg_id
 
         # Load feature file
         cep, _ = feature_server.load(ndx.segset[ts])
-        
+
         llr = numpy.zeros(numpy.array(idx_enroll).shape)
         for m in range(llr.shape[0]):
             # Compute llk for the current model
@@ -167,9 +167,11 @@ def gmm_scoring(ubm, enroll, ndx, feature_server, num_thread=1):
     jobs = []
     for idx in los:
         #ANWAR (add)
-        p = Thread(target=gmm_scoring_singleThread, args=(ubm, enroll, ndx, feature_server, s, idx))
+        # p = multiprocessing.Process(target=gmm_scoring_singleThread,
+        #                             args=(ubm, enroll, ndx, feature_server, s, idx))
+        p = Thread( target=gmm_scoring_singleThread,
+                    args=(ubm, enroll, ndx, feature_server, s, idx))
         #END
-        # p = multiprocessing.Process()
         jobs.append(p)
         p.start()
     for p in jobs:
