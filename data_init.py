@@ -114,6 +114,6 @@ def create_Ndx(save_flag = True):
 
 
 if __name__ == "__main__":
-    enroll_speakers = set(create_idMap()) #unique speaker IDs
-    create_test_trials(sorted(list(enroll_speakers)))
+    # enroll_speakers = set(create_idMap()) #unique speaker IDs
+    # create_test_trials(sorted(list(enroll_speakers)))
     create_Ndx()
