@@ -8,6 +8,8 @@ import multiprocessing as mp
 import numpy as np
 import warnings
 warnings.filterwarnings("ignore")
+import logging
+logging.basicConfig(level=logging.INFO)
 
 
 
@@ -19,7 +21,7 @@ class SpeakerRecognizer():
         # self.SAMPLE_RATE = 16000
         self.NUM_CHANNELS = 2
         self.PRECISION = 16 #I mean 16-bit
-        self.NUM_THREADS = 0#mp.cpu_count() #(4 default)
+        self.NUM_THREADS = 0#mp.cpu_count()
         # Number of Guassian Distributions
         self.NUM_GUASSIANS = 32
         self.base_dir = "/media/anwar/E/Voice_Biometrics/SIDEKIT-1.3/py3env"
@@ -47,11 +49,13 @@ class SpeakerRecognizer():
         # window_size: size of the sliding window to process (in seconds)
         # shift: time shift of the sliding window (in seconds)
         # ceps_number: number of cepstral coefficients to extract
-
         # snr: signal to noise ratio used for "snr" vad algorithm
         # pre_emphasis: value given for the pre-emphasis filter (default is 0.97)
         # save_param: list of strings that indicate which parameters to save. The strings can be:
-        # "cep" for cepstral coefficients, "fb" for filter-banks, "energy" for the log-energy, "bnf"
+        # -> "cep" for cepstral coefficients, its size is ceps_number which is 19
+        # -> "fb" for filter-banks, its size is 24
+        # -> "energy" for the log-energy, its size is 1
+        # -> "bnf"
         # for bottle-neck features and "vad" for the frame selection labels.
         # keep_all_features: boolean, if True, all frames are writen; if False, keep only frames according to the vad label
         # NOTE: ths will create features from audio/data directory which contains all of our files
@@ -85,12 +89,12 @@ class SpeakerRecognizer():
             try:
                 extractor.save(show, channel)
             except RuntimeError:
-                print("SKIPPED")
+                logging.info("SKIPPED")
                 SKIPPED.append(show)
                 continue
-        print("Number of skipped:", len(SKIPPED))
+        logging.info("Number of skipped files: "+str(len(SKIPPED)))
         for show in SKIPPED:
-            print(show)
+            logging.debug(show)
         #BUG: The following lines do the exact same thing
         # as the few ones above, but with using multi-processing where
         # num_thread: is the number of parallel process to run
@@ -119,7 +123,7 @@ class SpeakerRecognizer():
                                         double_delta=True,
                                         rasta=True,
                                         keep_all_features=True)
-        print(server)
+        logging.info(server)
         return server
 
 
@@ -129,10 +133,10 @@ class SpeakerRecognizer():
         train_list = os.listdir(os.path.join(self.base_dir, "audio", "enroll"))
         for i in range(len(train_list)):
             train_list[i] = train_list[i].split(".h5")[0]
-        print("Creating Feature-Server:")
+        logging.info("Creating Feature-Server:")
         server = self.__createFeatureServer("enroll")
 
-        print("Training...")
+        logging.info("Training...")
         ubm = sidekit.Mixture()
         # Expectation-Maximization estimation of the Mixture parameters.
         ubm.EM_split(features_server=server, #sidekit.FeaturesServer used to load data
@@ -141,8 +145,8 @@ class SpeakerRecognizer():
                      iterations=(1, 2, 2, 4, 4, 4, 4, 8, 8, 8, 8, 8, 8), # list of iteration number for each step of the learning process
                      num_thread=self.NUM_THREADS, # number of thread to launch for parallel computing
                      save_partial=True # if False, it only saves the last model
-                     )
-        # ->1 iteration of EM with 1 distribution
+                    )
+        # -> 1 iteration of EM with 1 distribution
         # -> 2 iterations of EM with 2 distributions
         # -> 2 iterations of EM with 4 distributions
         # -> 4 iterations of EM with 8 distributions
@@ -157,7 +161,7 @@ class SpeakerRecognizer():
         model_dir = os.path.join(self.base_dir, "ubm")
         if SAVE_FLAG:
             modelname = "ubm_{}.h5".format(self.NUM_GUASSIANS)
-            print("Saving the model {} at {}".format(modelname, model_dir))
+            logging.info("Saving the model {} at {}".format(modelname, model_dir))
             ubm.write(os.path.join(model_dir, modelname))
 
 
@@ -179,18 +183,21 @@ class SpeakerRecognizer():
         ubm = sidekit.Mixture()
         model_name = "ubm_{}.h5".format(self.NUM_GUASSIANS)
         ubm.read(os.path.join(self.base_dir, "ubm", model_name))
+        # Create Feature Extractor
+        feat_dir = os.path.join(self.base_dir, "feat")
         ##################################################################
         ############################ CREATING ############################
         ##################################################################
         # Create Statistic Server to store/process the enrollment data
         enroll_stat = sidekit.StatServer(statserver_file_name=enroll_idmap,
                                          ubm=ubm)
-        print(enroll_stat)
+        logging.debug(enroll_stat)
         # Compute the sufficient statistics for a list of sessions whose indices are segIndices.
         enroll_stat.accumulate_stat(ubm=ubm,
                                     feature_server=server,
                                     seg_indices=range(enroll_stat.segset.shape[0]),
-                                    num_thread=self.NUM_THREADS)
+                                    num_thread=self.NUM_THREADS
+                                   )
         # Save the status of the enroll data
         enroll_stat.write(os.path.join(self.base_dir, "task", "enroll_stat.h5"))
         # MAP adaptation of enrollment speaker models
@@ -201,8 +208,8 @@ class SpeakerRecognizer():
         scores_gmm_ubm = sidekit.gmm_scoring(ubm=ubm,
                                              enroll=enroll_sv,
                                              ndx=test_ndx,
-                                             feature_server=server,
-                                             num_thread=self.NUM_THREADS
+                                             feature_server=server
+                                            #  num_thread=self.NUM_THREADS
                                             )
         # Save the model's Score object
         scores_gmm_ubm.write(os.path.join(self.base_dir, "ubm", "test_scores.h5"))
