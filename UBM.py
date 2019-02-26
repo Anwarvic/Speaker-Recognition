@@ -18,12 +18,11 @@ class SpeakerRecognizer():
 
     def __init__(self):
         ############ Global Variables ###########
-        # self.SAMPLE_RATE = 16000
-        # self.NUM_CHANNELS = 1
-        # self.PRECISION = 16 #I mean 16-bit
-        self.NUM_THREADS = 0#mp.cpu_count()
+        #use 0 to disable multi-processing (RECOMMENDED)
+        self.NUM_THREADS = mp.cpu_count()
         # Number of Guassian Distributions
         self.NUM_GUASSIANS = 32
+        # The parent directory of the project
         self.base_dir = "/media/anwar/E/Voice_Biometrics/SIDEKIT-1.3/py3env"
     
 
@@ -123,6 +122,7 @@ class SpeakerRecognizer():
                                         double_delta=True,
                                         rasta=True,
                                         keep_all_features=True)
+        logging.info("Feature-Server is created")
         logging.debug(server)
         return server
 
@@ -133,9 +133,7 @@ class SpeakerRecognizer():
         train_list = os.listdir(os.path.join(self.base_dir, "audio", "enroll"))
         for i in range(len(train_list)):
             train_list[i] = train_list[i].split(".h5")[0]
-        logging.info("Creating Feature-Server:")
         server = self.__createFeatureServer("enroll")
-
         logging.info("Training...")
         ubm = sidekit.Mixture()
         # Expectation-Maximization estimation of the Mixture parameters.
@@ -144,7 +142,7 @@ class SpeakerRecognizer():
                      distrib_nb=self.NUM_GUASSIANS, # final number of Gaussian distributions
                      iterations=(1, 2, 2, 4, 4, 4, 4, 8, 8, 8, 8, 8, 8), # list of iteration number for each step of the learning process
                      num_thread=self.NUM_THREADS, # number of thread to launch for parallel computing
-                     save_partial=True # if False, it only saves the last model
+                     save_partial=False # if False, it only saves the last model
                     )
         # -> 1 iteration of EM with 1 distribution
         # -> 2 iterations of EM with 2 distributions
@@ -162,29 +160,31 @@ class SpeakerRecognizer():
             modelname = "ubm_{}.h5".format(self.NUM_GUASSIANS)
             logging.info("Saving the model {} at {}".format(modelname, model_dir))
             ubm.write(os.path.join(model_dir, modelname))
-        
         # Read idmap for the enrolling data
         enroll_idmap = sidekit.IdMap.read(os.path.join(self.base_dir, "task", "idmap_enroll.h5"))
         # Create Statistic Server to store/process the enrollment data
         enroll_stat = sidekit.StatServer(statserver_file_name=enroll_idmap,
                                          ubm=ubm)
         logging.debug(enroll_stat)
+
+
+
         # Compute the sufficient statistics for a list of sessions whose indices are segIndices.
+        server.feature_filename_structure = os.path.join(self.base_dir, "feat", "{}.h5")
+        #BUG: don't use self.NUM_THREADS when assgining num_thread as it's prune to race-conditioning
         enroll_stat.accumulate_stat(ubm=ubm,
                                     feature_server=server,
-                                    seg_indices=range(enroll_stat.segset.shape[0]),
-                                    num_thread=self.NUM_THREADS
+                                    seg_indices=range(enroll_stat.segset.shape[0])
                                    )
         if SAVE_FLAG:
             # Save the status of the enroll data
-            enroll_stat.write(os.path.join(self.base_dir, "task", "enroll_stat.h5"))
+            filename = "enroll_stat_{}.h5".format(self.NUM_GUASSIANS)
+            enroll_stat.write(os.path.join(self.base_dir, "ubm", filename))
 
 
 
     def evaluate(self):
-        ##################################################################
         ############################# READING ############################
-        ##################################################################
         # Create Feature server
         server = self.__createFeatureServer()
         # Read the index for the test datas
@@ -193,10 +193,10 @@ class SpeakerRecognizer():
         ubm = sidekit.Mixture()
         model_name = "ubm_{}.h5".format(self.NUM_GUASSIANS)
         ubm.read(os.path.join(self.base_dir, "ubm", model_name))
-        ##################################################################
-        ############################ CREATING ############################
-        ##################################################################
-        enroll_stat = sidekit.StatServer.read(os.path.join(self.base_dir, "task", "enroll_stat.h5"))
+
+        ############################ Evaluating ###########################
+        filename = "enroll_stat_{}.h5".format(self.NUM_GUASSIANS)
+        enroll_stat = sidekit.StatServer.read(os.path.join(self.base_dir, "ubm", filename))
         # MAP adaptation of enrollment speaker models
         enroll_sv = enroll_stat.adapt_mean_map_multisession(ubm=ubm,
                                                             r=3 # MAP regulation factor
@@ -205,16 +205,18 @@ class SpeakerRecognizer():
         scores_gmm_ubm = sidekit.gmm_scoring(ubm=ubm,
                                              enroll=enroll_sv,
                                              ndx=test_ndx,
-                                             feature_server=server
-                                            #  num_thread=self.NUM_THREADS
+                                             feature_server=server,
+                                             num_thread=self.NUM_THREADS
                                             )
         # Save the model's Score object
-        scores_gmm_ubm.write(os.path.join(self.base_dir, "result", "test_scores.h5"))
+        filename = "test_scores_{}.h5".format(self.NUM_GUASSIANS)
+        scores_gmm_ubm.write(os.path.join(self.base_dir, "result", filename))
         
 
     def plotDETcurve(self):
         # Read test scores
-        scores_dir = os.path.join(self.base_dir, "result", "test_scores.h5")
+        filename = "test_scores_{}.h5".format(self.NUM_GUASSIANS)
+        scores_dir = os.path.join(self.base_dir, "result", filename)
         scores_gmm_ubm = sidekit.Scores.read(scores_dir)
         # Read the key
         key = sidekit.Key.read_txt(os.path.join(self.base_dir, "task", "test_trials.txt"))
@@ -222,13 +224,14 @@ class SpeakerRecognizer():
         # Make DET plot
         logging.info("Drawing DET Curve")
         dp = sidekit.DetPlot(window_style='sre10', plot_title='Scores GMM-UBM')
-        dp.create_figure()
         dp.set_system_from_scores(scores_gmm_ubm, key, sys_name='GMM-UBM')
-        dp.plot_rocch_det()
+        dp.create_figure()
+        dp.plot_rocch_det(0)
         dp.plot_DR30_both(idx=0)
         prior = sidekit.logit_effective_prior(0.01, 10, 1)
         dp.plot_mindcf_point(prior, idx=0)
-        dp.__figure__.savefig(os.path.join(self.base_dir, "result", "DET_GMM_UBM.png"))
+        graphname = "DET_GMM_UBM_{}.png".format(self.NUM_GUASSIANS)
+        dp.__figure__.savefig(os.path.join(self.base_dir, "result", graphname))
 
 
 
