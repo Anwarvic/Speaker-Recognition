@@ -15,10 +15,10 @@ logging.basicConfig(level=logging.INFO)
 
 
 class SpeakerRecognizer():
-
+    
     def __init__(self):
         ############ Global Variables ###########
-        #use 0 to disable multi-processing (RECOMMENDED)
+        # use 0 to disable multi-processing
         self.NUM_THREADS = mp.cpu_count()
         # Number of Guassian Distributions
         self.NUM_GUASSIANS = 32
@@ -183,7 +183,7 @@ class SpeakerRecognizer():
 
 
 
-    def evaluate(self):
+    def evaluate(self, explain=True):
         ############################# READING ############################
         # Create Feature server
         server = self.__createFeatureServer()
@@ -212,6 +212,20 @@ class SpeakerRecognizer():
         filename = "test_scores_{}.h5".format(self.NUM_GUASSIANS)
         scores_gmm_ubm.write(os.path.join(self.base_dir, "result", filename))
         
+        #write Analysis
+        if explain:
+            filename = "test_scores_explained_{}.txt".format(self.NUM_GUASSIANS)
+            fout = open(os.path.join(self.base_dir, "result", filename), "a")
+            fout.truncate(0) #clear content
+            scores = scores_gmm_ubm.scoremat
+            for seg_idx, seg in enumerate(scores_gmm_ubm.segset):
+                fout.write("Wav: {}\n".format(seg.decode()))
+                for speaker_idx, speaker in enumerate(scores_gmm_ubm.modelset):
+                    fout.write("\tSpeaker {}:\t{}\n".format(speaker.decode(), scores[speaker_idx, seg_idx]))
+                fout.write("\n")
+            fout.close()
+
+
 
     def plotDETcurve(self):
         # Read test scores
@@ -235,6 +249,51 @@ class SpeakerRecognizer():
 
 
 
+    def __getAccuracy(self, speakers, test_files, scores):
+        """
+        This private method is used to get the accuracy of a model
+        given three pieces of information:
+        -> speakers: list of speakers
+        -> test_files: list of filenames that used to evaluate model
+        -> scores: score numpy matrix obtained by the model
+        And it should return the accuracy of the model in percentage
+        """
+        assert scores.shape == (len(speakers), len(test_files)),\
+            "The dimensions of the input don't match"
+        accuracy = 0.
+        max_indices = np.argmax(scores, axis=0)
+        for idx, test_filename in enumerate(test_files):
+            test_filename = test_filename.decode() #convert from byte to string
+            predicted_speaker = test_filename.split("/")[-1].split("_")[0]
+            if predicted_speaker == speakers[max_indices[idx]].decode():
+                accuracy += 1.
+        return accuracy/len(test_files)
+
+
+
+    def getAccuracy(self):
+        """
+        This function is used to get the accuracy of the model. 
+        It reads the "test_scores_{}.h5" file that we got  using the 
+        evaluate() method where {} is the number of Gaussians
+        used in the model. For example, if the number of Gaussian 
+        distributions is 32, then the file read will be "test_scores_32.h5",
+        This method should return the Accuracy of the model in percentage.
+        """
+        import h5py
+
+        filename = "test_scores_{}.h5".format(self.NUM_GUASSIANS)
+        filepath = os.path.join(self.base_dir, "result", filename)
+        h5 = h5py.File(filepath, mode="r")
+        modelset = list(h5["modelset"])
+        segest = list(h5["segset"])
+        scores = np.array(h5["scores"])
+        
+        #get Accuracy
+        accuracy = self.__getAccuracy(modelset, segest, scores)
+        return accuracy
+
+
 
 if __name__ == "__main__":
     ubm = SpeakerRecognizer()
@@ -242,5 +301,7 @@ if __name__ == "__main__":
     # ubm.extractFeatures("enroll")
     # ubm.extractFeatures("test")
     # ubm.train()
-    # ubm.evaluate()
-    ubm.plotDETcurve()
+    ubm.evaluate()
+    # ubm.plotDETcurve()
+
+    # print( "Accuracy: {}%".format(ubm.getAccuracy()) )
