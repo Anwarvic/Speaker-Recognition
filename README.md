@@ -55,15 +55,17 @@ The sideKit pipeline consists of five steps as shown in the following image:
 
 As we can see, the pipeline consists of six main steps:
 
-- Preprocessing: In this step, we perform some processing over the wav files to be consistent like changing the bit-rate, sampling rare, number of channels, ... etc. Besides dividing the data into **training (or enroll)** and **testing**.
-- Feature Extraction: In this step, we extract pre-defind features from the wav files.
-- Structure: In this step, we produce some files that will be helpful when training and evaluating our model.
-- Choosing A Model: In this step, we choose a certain model, out of four, to be trained. We have five models that can be trained:
+- **Preprocessing**: In this step, we perform some processing over the wav files to be consistent like changing the bit-rate, sampling rare, number of channels, ... etc. Besides dividing the data into **training (or enroll)** and **testing**.
+- **Feature Extraction**: In this step, we extract pre-defind features from the wav files.
+- **Structure**: In this step, we produce some files that will be helpful when training and evaluating our model.
+- **Choosing A Model**: In this step, we choose a certain model, out of four, to be trained. We have five models that can be trained:
 	- UBM
 	- SVM with GMM
 	- I-vector
 	- Deep Learning
-- Training: This step is pretty self-explanatory ... com'on.
-- Evaluating: This step is used to evaluate our model. We have two ways of evaluating a model. The first one is to draw the DET (Detection Error Tradeoff) graph. And the second is getting the accuracy percentage.
+- **Training**: This step is pretty self-explanatory ... com'on.
+-** Evaluating**: This step is used to evaluate our model. We have two ways of evaluating a model. The first one is to draw the DET (Detection Error Tradeoff) graph. And the second is getting the accuracy percentage.
 Let's talk about each one of these in more details:
 ### 1. Preprocessing
+
+TO BE CONTINUED :)
