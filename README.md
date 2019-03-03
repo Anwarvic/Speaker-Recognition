@@ -64,8 +64,46 @@ As we can see, the pipeline consists of six main steps:
 	- I-vector
 	- Deep Learning
 - **Training**: This step is pretty self-explanatory ... com'on.
--** Evaluating**: This step is used to evaluate our model. We have two ways of evaluating a model. The first one is to draw the DET (Detection Error Tradeoff) graph. And the second is getting the accuracy percentage.
+- ** Evaluating**: This step is used to evaluate our model. We have two ways of evaluating a model. The first one is to draw the DET (Detection Error Tradeoff) graph. And the second is getting the accuracy percentage.
 Let's talk about each one of these in more details:
 ### 1. Preprocessing
+The file responsible for data pre-processing is `data_preprocessing.py` in which I split the whole data into two groups (one for training (enroll) and the other for testing) beside doing some preprocessing over the wav files, to match the case that I'm creating this model for, like: 
+
+- Setting the sample rate to 16000.
+- Setting the number of channels to one (mono).
+- Setting the precision to 16-bit.
+
+In this file, you need to set only these Global Variables:
+
+- `EXCLUDED_IDS`: which includes the speaker you want to exclude from the whole data. In my case, I was working on only males, so I removed these speakers `11`, `36` and `44`.
+- `EXCLUDED_WORDS`: which contains the word's ID you want to exclude.
+- `ENROLL_NUM`: which are the number of speakers to be included in the training (enroll).
+- `TEST_NUM`: which are the number of speakers to be included in the test outside the enroll. I set the `ENROLL_NUM=10` and `TEST_NUM=5` which means that the training will be done on just 10 speakers and the test will be done using 15 speakers.
+- `ENROLL_REPS`: which determines how many repetition a word will be repeated in the training. Three is pretty realistic.
+`TEST_REPS`: it determines how many repetitions will be tested over a single word.
+
+And you need also to set these two member variables:
+
+- `INDIR`: which is the abolute path to the location of the downloaded data.
+- `OUTDIR`: which is the absolute path to the location where your project is located.
+
+After running this file, a directory named `audio` will be created where three sub-directories will be found. These three sub-directories are `data` which contains the whole data preprocessed, `enroll` which contains only the enrolled data for trainined, and `test` which contains the data for testing.
+
+**Note:**
+
+- The number of files inside `data` should equal `47 * 20 * 10 = 9400` where `47` is the total number of speakers - the excluded ones, `20` is the total number of words, and `10` is the total number of repetition of a single word. 
+- The number of files inside `enroll` should equal `ENROLL_NUM * 20 * ENROLL_REPS`. In my case, they are `10 * 20 * 3 = 600`.
+- The number of files inside `test` should equal `TEST_NUM+ENROLL_NUM * 20 * TEST_REPS`. In my case, they are `15 * 20 * 7 = 2100`.
+
+### 2. Feature Extraction
+
+
+
+
+
+
+
+
+
 
 TO BE CONTINUED :)
