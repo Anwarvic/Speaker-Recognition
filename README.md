@@ -52,6 +52,7 @@ d = {
 ## How it Works
 The sideKit pipeline consists of five steps as shown in the following image:
 ![SideKit pipeline](http://www.mediafire.com/convkey/cc16/r56t49ybirn455izg.jpg) 
+
 As we can see, the pipeline consists of six main steps:
 
 - Preprocessing: In this step, we perform some processing over the wav files to be consistent like changing the bit-rate, sampling rare, number of channels, ... etc. Besides dividing the data into **training (or enroll)** and **testing**.
