@@ -146,8 +146,54 @@ Value: [-1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 
 
 
+"""
+THE RESULT
+<KeysViewHDF5 ['modelset', 'score_mask', 'scores', 'segset']>
+Key: modelset
+Value Type: <HDF5 dataset "modelset": shape (10,), type "|S100">
+Value Shape: (10,)
+Value: [b'MS01' b'MS02' b'MS08' b'MS14' b'MS16' b'MS22' b'MS25' b'MS30' b'MS35'
+ b'MS39']
+=========================
+Key: score_mask
+Value Type: <HDF5 dataset "score_mask": shape (10, 2100), type "|i1">
+Value Shape: (10, 2100)
+Value: [[1 1 1 ... 1 1 1]
+ [1 1 1 ... 1 1 1]
+ [1 1 1 ... 1 1 1]
+ ...
+ [1 1 1 ... 1 1 1]
+ [1 1 1 ... 1 1 1]
+ [1 1 1 ... 1 1 1]]
+=========================
+Key: scores
+Value Type: <HDF5 dataset "scores": shape (10, 2100), type "<f8">
+Value Shape: (10, 2100)
+Value: [[ 0.54247419  0.15888919  1.19754286 ... -0.6095448  -3.43364396
+  -1.52826966]
+ [-0.71835815 -2.45878456 -0.83016353 ... -2.31895352 -0.93033672
+  -1.53773902]
+ [-4.76477901 -5.63218167 -5.70685698 ... -5.88155517 -3.99664898
+  -4.24604119]
+ ...
+ [-3.26613381 -2.20492552 -2.78466674 ... -2.03082944 -2.76717418
+  -2.29545045]
+ [-2.90372944 -1.49591556  0.34278641 ... -2.43551974 -0.09839703
+  -1.72443111]
+ [-3.83413479 -4.5019622  -3.75653398 ... -0.09255795 -2.76116721
+  -3.94034613]]
+=========================
+Key: segset
+Value Type: <HDF5 dataset "segset": shape (2100,), type "|S100">
+Value Shape: (2100,)
+Value: [b'test/MS01_04_01.wav' b'test/MS01_04_02.wav' b'test/MS01_04_03.wav' ...
+ b'test/MS50_10_18.wav' b'test/MS50_10_19.wav' b'test/MS50_10_20.wav']
+"""
+
+
 if __name__ == "__main__":
-    explore_file("/media/anwar/E/Voice_Biometrics/SIDEKIT-1.3/py3env/feat/enroll/MS01_01_01.wav.h5")
+    # explore_file("/media/anwar/E/Voice_Biometrics/SIDEKIT-1.3/py3env/feat/enroll/MS01_01_01.wav.h5")
     # explore_file("/media/anwar/E/Voice_Biometrics/SIDEKIT-1.3/py3env/task/idmap_enroll.h5")
     # explore_file("/media/anwar/E/Voice_Biometrics/SIDEKIT-1.3/py3env/task/test_ndx.h5")
-    # explore_file("/media/anwar/E/Voice_Biometrics/SIDEKIT-1.3/py3env/task/enroll_stat.h5")
+    # explore_file("/media/anwar/E/Voice_Biometrics/SIDEKIT-1.3/py3env/ubm/enroll_stat.h5")
+    explore_file("/media/anwar/E/Voice_Biometrics/SIDEKIT-1.3/py3env/result/test_scores_32.h5")
