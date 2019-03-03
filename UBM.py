@@ -167,8 +167,6 @@ class SpeakerRecognizer():
                                          ubm=ubm)
         logging.debug(enroll_stat)
 
-
-
         # Compute the sufficient statistics for a list of sessions whose indices are segIndices.
         server.feature_filename_structure = os.path.join(self.base_dir, "feat", "{}.h5")
         #BUG: don't use self.NUM_THREADS when assgining num_thread as it's prune to race-conditioning
@@ -217,11 +215,13 @@ class SpeakerRecognizer():
             filename = "test_scores_explained_{}.txt".format(self.NUM_GUASSIANS)
             fout = open(os.path.join(self.base_dir, "result", filename), "a")
             fout.truncate(0) #clear content
-            scores = scores_gmm_ubm.scoremat
-            for seg_idx, seg in enumerate(scores_gmm_ubm.segset):
-                fout.write("Wav: {}\n".format(seg.decode()))
-                for speaker_idx, speaker in enumerate(scores_gmm_ubm.modelset):
-                    fout.write("\tSpeaker {}:\t{}\n".format(speaker.decode(), scores[speaker_idx, seg_idx]))
+            modelset = list(scores_gmm_ubm.modelset)
+            segest = list(scores_gmm_ubm.segset)
+            scores = np.array(scores_gmm_ubm.scoremat)
+            for seg_idx, seg in enumerate(segest):
+                fout.write("Wav: {}\n".format(seg))
+                for speaker_idx, speaker in enumerate(modelset):
+                    fout.write("\tSpeaker {}:\t{}\n".format(speaker, scores[speaker_idx, seg_idx]))
                 fout.write("\n")
             fout.close()
 
@@ -249,22 +249,30 @@ class SpeakerRecognizer():
 
 
 
-    def __getAccuracy(self, speakers, test_files, scores):
+    def __getAccuracy(self, speakers, test_files, scores, mode=2):
         """
         This private method is used to get the accuracy of a model
-        given three pieces of information:
+        given four pieces of information:
         -> speakers: list of speakers
         -> test_files: list of filenames that used to evaluate model
         -> scores: score numpy matrix obtained by the model
+        -> mode: which is one of these values [0, 1, 2] where:
+            -> 0: means get verification accuracy.
+            -> 1: means get recognition accuracy.
+            -> 2: means get both accuracy, verification and recognition.
         And it should return the accuracy of the model in percentage
         """
+        assert model in [0, 1, 2],\
+            "The model variable must be one of these values[0, 1, 2]"
         assert scores.shape == (len(speakers), len(test_files)),\
             "The dimensions of the input don't match"
+        
         accuracy = 0.
         max_indices = np.argmax(scores, axis=0)
         for idx, test_filename in enumerate(test_files):
             test_filename = test_filename.decode() #convert from byte to string
             predicted_speaker = test_filename.split("/")[-1].split("_")[0]
+            #TODO: ADD THE MODE OF THE ACCURACY
             if predicted_speaker == speakers[max_indices[idx]].decode():
                 accuracy += 1.
         return accuracy/len(test_files)
@@ -302,6 +310,6 @@ if __name__ == "__main__":
     # ubm.extractFeatures("test")
     # ubm.train()
     ubm.evaluate()
-    # ubm.plotDETcurve()
+    ubm.plotDETcurve()
 
-    # print( "Accuracy: {}%".format(ubm.getAccuracy()) )
+    print( "Accuracy: {}%".format(ubm.getAccuracy()) )
