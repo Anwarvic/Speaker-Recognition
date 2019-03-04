@@ -52,7 +52,7 @@ d = {
 ## How it Works
 The sideKit pipeline consists of five steps as shown in the following image:
 <p align="center">
-![SideKit pipeline](http://www.mediafire.com/convkey/cc16/r56t49ybirn455izg.jpg) 
+<img src="http://www.mediafire.com/convkey/cc16/r56t49ybirn455izg.jpg" /> 
 </p>
 As we can see, the pipeline consists of six main steps:
 
