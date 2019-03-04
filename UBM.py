@@ -21,87 +21,10 @@ class SpeakerRecognizer():
         # use 0 to disable multi-processing
         self.NUM_THREADS = mp.cpu_count()
         # Number of Guassian Distributions
-        self.NUM_GUASSIANS = 32
+        self.NUM_GUASSIANS = 128
         # The parent directory of the project
         self.base_dir = "/media/anwar/E/Voice_Biometrics/SIDEKIT-1.3/py3env"
     
-
-    def extractFeatures(self, group):
-        """
-        This function computes the acoustic parameters:
-         -> filter banks: fb
-         -> cepstral coefficients: cep
-         -> log-energy: energy
-         -> vad: type of voice activity detection algorithm to use.
-                Can be "energy", "snr", "percentil" or "lbl".
-                I chose snr (Signal-to-noise-ratio)
-        for a list of audio files and save them to disk in a HDF5 format
-        The process is parallelized if num_thread is higher than 1
-        """
-        in_files = os.listdir(os.path.join(self.base_dir, "audio", group))
-        feat_dir = os.path.join(self.base_dir, "feat", group)
-        # Feature extraction
-        # lower_frequency: lower frequency (in Herz) of the filter bank
-        # higher_frequency: higher frequency of the filter bank
-        # filter_bank: type of fiter scale to use, can be "lin" or "log" (for linear of log-scale)
-        # filter_bank_size: number of filters banks
-        # window_size: size of the sliding window to process (in seconds)
-        # shift: time shift of the sliding window (in seconds)
-        # ceps_number: number of cepstral coefficients to extract
-        # snr: signal to noise ratio used for "snr" vad algorithm
-        # pre_emphasis: value given for the pre-emphasis filter (default is 0.97)
-        # save_param: list of strings that indicate which parameters to save. The strings can be:
-        # -> "cep" for cepstral coefficients, its size is ceps_number which is 19
-        # -> "fb" for filter-banks, its size is 24
-        # -> "energy" for the log-energy, its size is 1
-        # -> "bnf"
-        # for bottle-neck features and "vad" for the frame selection labels.
-        # keep_all_features: boolean, if True, all frames are writen; if False, keep only frames according to the vad label
-        # NOTE: ths will create features from audio/data directory which contains all of our files
-        extractor = sidekit.FeaturesExtractor(audio_filename_structure=os.path.join(self.base_dir, "audio", group, "{}"),
-                                              feature_filename_structure=os.path.join(feat_dir, "{}.h5"),
-                                              lower_frequency=300,
-                                              higher_frequency=3400,
-                                              filter_bank="log",
-                                              filter_bank_size=24,
-                                              window_size=0.025,
-                                              shift=0.01,
-                                              ceps_number=19,
-                                              vad="snr",
-                                              snr=40,
-                                              pre_emphasis=0.97,
-                                              save_param=["vad", "energy", "cep", "fb"],
-                                              keep_all_features=True)
-
-        # Prepare file lists
-        # show_list: list of IDs of the show to process
-        show_list = np.unique(np.hstack([in_files]))
-        # channel_list: list of channel indices corresponding to each show
-        channel_list = np.zeros_like(show_list, dtype = int)
-
-        # save the features in feat_dir where the resulting-files parameters
-        # are always concatenated in the following order:
-        # (energy, fb, cep, bnf, vad_label).
-        # SKIPPED: list to track faulty-files
-        SKIPPED = []
-        for show, channel in zip(show_list, channel_list):
-            try:
-                extractor.save(show, channel)
-            except RuntimeError:
-                logging.info("SKIPPED")
-                SKIPPED.append(show)
-                continue
-        logging.info("Number of skipped files: "+str(len(SKIPPED)))
-        for show in SKIPPED:
-            logging.debug(show)
-        #BUG: The following lines do the exact same thing
-        # as the few ones above, but with using multi-processing where
-        # num_thread: is the number of parallel process to run
-        # This method freezes after sometime, so you can try it
-        # extractor.save_list(show_list=show_list,
-        #                     channel_list=channel_list,
-        #                     num_thread=self.NUM_THREADS)
-
 
     def __createFeatureServer(self, group=None):
         if group:
@@ -249,10 +172,10 @@ class SpeakerRecognizer():
 
 
 
-    def __getAccuracy(self, speakers, test_files, scores, mode=2):
+    def __getAccuracy(self, speakers, test_files, scores, mode=2, threshold=0):
         """
         This private method is used to get the accuracy of a model
-        given four pieces of information:
+        given five pieces of information:
         -> speakers: list of speakers
         -> test_files: list of filenames that used to evaluate model
         -> scores: score numpy matrix obtained by the model
@@ -260,21 +183,47 @@ class SpeakerRecognizer():
             -> 0: means get verification accuracy.
             -> 1: means get recognition accuracy.
             -> 2: means get both accuracy, verification and recognition.
+        -> threshold: the value above which we will consider the verification
+                is done correctly. In other words, if the score>threshold, then
+                the answer is considered; otherwise, the answer is not considered
         And it should return the accuracy of the model in percentage
         """
-        assert model in [0, 1, 2],\
+        assert mode in [0, 1, 2],\
             "The model variable must be one of these values[0, 1, 2]"
         assert scores.shape == (len(speakers), len(test_files)),\
             "The dimensions of the input don't match"
-        
         accuracy = 0.
+        speakers = [sp.decode() for sp in speakers]
         max_indices = np.argmax(scores, axis=0)
+        max_scores = np.max(scores, axis=0)
         for idx, test_filename in enumerate(test_files):
             test_filename = test_filename.decode() #convert from byte to string
-            predicted_speaker = test_filename.split("/")[-1].split("_")[0]
-            #TODO: ADD THE MODE OF THE ACCURACY
-            if predicted_speaker == speakers[max_indices[idx]].decode():
-                accuracy += 1.
+            actual_speaker = test_filename.split("/")[-1].split("_")[0]
+            predicted_speaker = speakers[max_indices[idx]]
+            #TODO: 
+            ########## JUST VERIFICATION ##########
+            if mode == 0:
+                if max_scores[idx] < threshold:
+                    continue
+                else:
+                    accuracy += 1.
+            ########## JUST RECOGNITION ##########
+            elif mode == 1:
+                #skip speakers outside the training
+                if actual_speaker not in speakers:
+                    continue
+                else:
+                    if predicted_speaker == actual_speaker:
+                        accuracy += 1.
+            ########## VERIFICATION & RECOGNITION ##########
+            elif mode == 2:
+                #skip speakers outside the training
+                if max_scores[idx] < threshold:
+                    continue
+                else:
+                    if predicted_speaker == actual_speaker:
+                        accuracy += 1.
+
         return accuracy/len(test_files)
 
 
@@ -298,18 +247,15 @@ class SpeakerRecognizer():
         scores = np.array(h5["scores"])
         
         #get Accuracy
-        accuracy = self.__getAccuracy(modelset, segest, scores)
+        accuracy = self.__getAccuracy(modelset, segest, scores, mode=2, threshold=0)
         return accuracy
 
 
 
 if __name__ == "__main__":
     ubm = SpeakerRecognizer()
-    # ubm.extractFeatures("data")
-    # ubm.extractFeatures("enroll")
-    # ubm.extractFeatures("test")
-    # ubm.train()
+    ubm.train()
     ubm.evaluate()
     ubm.plotDETcurve()
-
+    # ubm.NUM_GUASSIANS = 64
     print( "Accuracy: {}%".format(ubm.getAccuracy()) )
