@@ -51,11 +51,12 @@ d = {
 ```
 ## How it Works
 The sideKit pipeline consists of five steps as shown in the following image:
+<p align="center">
 ![SideKit pipeline](http://www.mediafire.com/convkey/cc16/r56t49ybirn455izg.jpg) 
-
+</p>
 As we can see, the pipeline consists of six main steps:
 
-- **Preprocessing**: In this step, we perform some processing over the wav files to be consistent like changing the bit-rate, sampling rare, number of channels, ... etc. Besides dividing the data into **training (or enroll)** and **testing**.
+- **Preprocessing**: In this step, we perform some processing over the wav files to be consistent like changing the bit-rate, sampling rare, number of channels, ... etc. Besides dividing the data into *training (or enroll)* and *testing*.
 - **Feature Extraction**: In this step, we extract pre-defind features from the wav files.
 - **Structure**: In this step, we produce some files that will be helpful when training and evaluating our model.
 - **Choosing A Model**: In this step, we choose a certain model, out of four, to be trained. We have five models that can be trained:
@@ -92,11 +93,31 @@ After running this file, a directory named `audio` will be created where three s
 **Note:**
 
 - The number of files inside `data` should equal `47 * 20 * 10 = 9400` where `47` is the total number of speakers - the excluded ones, `20` is the total number of words, and `10` is the total number of repetition of a single word. 
-- The number of files inside `enroll` should equal `ENROLL_NUM * 20 * ENROLL_REPS`. In my case, they are `10 * 20 * 3 = 600`.
-- The number of files inside `test` should equal `TEST_NUM+ENROLL_NUM * 20 * TEST_REPS`. In my case, they are `15 * 20 * 7 = 2100`.
+- The number of files inside `enroll` should equal `ENROLL_NUM * number of used words * ENROLL_REPS`. In my case, they are `10 * 20 * 3 = 600`.
+- The number of files inside `test` should equal `(TEST_NUM+ENROLL_NUM) * number of used words * TEST_REPS`. In my case, they are `15 * 20 * 7 = 2100`.
 
 ### 2. Feature Extraction
+The file responsible for the feature extraction is `extract_features.py` in which I extract features from the audio files and the extracted features will be located at a new folder called `feat` at the project directory. Note that this file needs the data to be located at `audio` directory and it also needs the enroll/training data to be at `audio/enroll` and the test data to be at `audio/test`.
+To be able to use this file, you need to set these member variables:
 
+- `BASE_DIR`: it's the absolute path to the project's directory.
+- `NUM_THREADS`: the number of threads to be running in parallel
+- `FEAUTRES`: it is a list of features that will to be extracted from the audio files. The list of features I used are These features are `fb`: Filter Banks, `cep`: Cepstral Coefficients, `eneregy` and `vad`: Voice Activity Detection. If you chose `vad` within the least of features, you need to set the alogrithm that will be used between either `snr` or `energy`. I chose `snr`: Signal-to-Noise Ratio.
+- `FILTER_BANK`: The type of filter-banknig used. It can be either `log` or `lin`:linear.
+- `FILTER_BANK_SIZE`: Size of the filter bank.
+- `LOWER_FREQUENCY`: the lower frequency (in Hz) of the filter bank.
+- `HIGHER_FREQUENCY`: the higher frequency (in Hz) of the filter bank.
+- `VAD`: The Voice Activity Detection algorithm used.
+- `SNR_RATIO`: The ratio of the SNR algortihm (in db).
+- `WINDOW_SIZE`: the size of the window for cep features.
+- `WINDOW_SHIFT`: The step that the window is moving (in sec).
+- `CEPS_NUMBER`: the size of the cep vector.
+
+There is also a method called `reviewMemberVariables` that resets these member varibales back to `None` based on the `FEATURES` used in your model.
+
+You can download the features used in my model from [here](http://www.mediafire.com/file/03o7i80o7a2taza/feat.zip/file). After downloading, you can extract them in the projects directory.
+
+### 3. Structure
 
 
 
