@@ -14,7 +14,7 @@ logging.basicConfig(level=logging.INFO)
 
 
 
-class SpeakerRecognizer():
+class UBM():
     
     def __init__(self):
         ############ Global Variables ###########
@@ -253,7 +253,7 @@ class SpeakerRecognizer():
 
 
 if __name__ == "__main__":
-    ubm = SpeakerRecognizer()
+    ubm = UBM()
     ubm.train()
     ubm.evaluate()
     ubm.plotDETcurve()
