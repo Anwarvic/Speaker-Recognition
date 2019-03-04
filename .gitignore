@@ -5,6 +5,7 @@ man
 share
 audio
 feat
+result
 __pycache__
 *.pyc
 
