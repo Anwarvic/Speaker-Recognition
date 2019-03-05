@@ -58,7 +58,8 @@ class Initializer():
         enroll_idmap.start = np.empty(enroll_idmap.rightids.shape, '|O')
         enroll_idmap.stop = np.empty(enroll_idmap.rightids.shape, '|O')
         if enroll_idmap.validate():
-            enroll_idmap.write(os.path.join(self.TASK_DIR, 'idmap_enroll.h5'))
+            #TODO: possibily adding tv_idmap.h5 and plda_idmap.h5
+            enroll_idmap.write(os.path.join(self.TASK_DIR, 'enroll_idmap.h5'))
         else:
             raise RuntimeError('Problems with creating idMap file')
 
