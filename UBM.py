@@ -1,62 +1,29 @@
 import os
-import subprocess
 import sidekit
-import numpy as np
-from tqdm import tqdm
-from utils import preprocessAudioFile
-import multiprocessing as mp
 import numpy as np
 import warnings
 warnings.filterwarnings("ignore")
 import logging
 logging.basicConfig(level=logging.INFO)
+from model_interface import SidekitModel
 
 
 
-
-class UBM():
+class UBM(SidekitModel):
+    """Universal Background Model"""
     
     def __init__(self):
-        ############ Global Variables ###########
-        # use 0 to disable multi-processing
-        self.NUM_THREADS = mp.cpu_count()
+        super().__init__()
         # Number of Guassian Distributions
-        self.NUM_GUASSIANS = 128
-        # The parent directory of the project
-        self.base_dir = "/media/anwar/E/Voice_Biometrics/SIDEKIT-1.3/py3env"
+        self.NUM_GUASSIANS = 32
     
 
-    def __createFeatureServer(self, group=None):
-        if group:
-            feat_dir = os.path.join(self.base_dir, "feat", group)
-        else:
-            feat_dir = os.path.join(self.base_dir, "feat")
-        # feature_filename_structure: structure of the filename to use to load HDF5 files
-        # dataset_list: string of the form ["cep", "fb", vad", energy", "bnf"]
-        # feat_norm: type of normalization to apply as post-processing
-        # delta: if True, append the first order derivative
-        # double_delta: if True, append the second order derivative
-        # rasta: if True, perform RASTA filtering
-        # keep_all_features: boolean, if True, keep all features, if False, keep frames according to the vad labels
-        server = sidekit.FeaturesServer(feature_filename_structure=os.path.join(feat_dir, "{}.h5"),
-                                        dataset_list=["vad", "energy", "cep", "fb"],
-                                        feat_norm="cmvn",
-                                        delta=True,
-                                        double_delta=True,
-                                        rasta=True,
-                                        keep_all_features=True)
-        logging.info("Feature-Server is created")
-        logging.debug(server)
-        return server
-
-
     def train(self, SAVE_FLAG=True):
-        #Universal Background Model Training
         #SEE: https://projets-lium.univ-lemans.fr/sidekit/tutorial/ubmTraining.html
-        train_list = os.listdir(os.path.join(self.base_dir, "audio", "enroll"))
+        train_list = os.listdir(os.path.join(self.BASE_DIR, "audio", "enroll"))
         for i in range(len(train_list)):
             train_list[i] = train_list[i].split(".h5")[0]
-        server = self.__createFeatureServer("enroll")
+        server = self.createFeatureServer("enroll")
         logging.info("Training...")
         ubm = sidekit.Mixture()
         # Expectation-Maximization estimation of the Mixture parameters.
@@ -67,31 +34,30 @@ class UBM():
                      num_thread=self.NUM_THREADS, # number of thread to launch for parallel computing
                      save_partial=False # if False, it only saves the last model
                     )
-        # -> 1 iteration of EM with 1 distribution
-        # -> 2 iterations of EM with 2 distributions
-        # -> 2 iterations of EM with 4 distributions
-        # -> 4 iterations of EM with 8 distributions
-        # -> 4 iterations of EM with 16 distributions
-        # -> 4 iterations of EM with 32 distributions
-        # -> 4 iterations of EM with 64 distributions
+        # -> 2 iterations of EM with 2   distributions
+        # -> 2 iterations of EM with 4   distributions
+        # -> 4 iterations of EM with 8   distributions
+        # -> 4 iterations of EM with 16  distributions
+        # -> 4 iterations of EM with 32  distributions
+        # -> 4 iterations of EM with 64  distributions
         # -> 8 iterations of EM with 128 distributions
         # -> 8 iterations of EM with 256 distributions
         # -> 8 iterations of EM with 512 distributions
         # -> 8 iterations of EM with 1024 distributions
-        model_dir = os.path.join(self.base_dir, "ubm")
-        if SAVE_FLAG:
-            modelname = "ubm_{}.h5".format(self.NUM_GUASSIANS)
-            logging.info("Saving the model {} at {}".format(modelname, model_dir))
-            ubm.write(os.path.join(model_dir, modelname))
+        model_dir = os.path.join(self.BASE_DIR, "ubm")
+        modelname = "ubm_{}.h5".format(self.NUM_GUASSIANS)
+        logging.info("Saving the model {} at {}".format(modelname, model_dir))
+        ubm.write(os.path.join(model_dir, modelname))
+
         # Read idmap for the enrolling data
-        enroll_idmap = sidekit.IdMap.read(os.path.join(self.base_dir, "task", "idmap_enroll.h5"))
+        enroll_idmap = sidekit.IdMap.read(os.path.join(self.BASE_DIR, "task", "enroll_idmap.h5"))
         # Create Statistic Server to store/process the enrollment data
         enroll_stat = sidekit.StatServer(statserver_file_name=enroll_idmap,
                                          ubm=ubm)
         logging.debug(enroll_stat)
 
         # Compute the sufficient statistics for a list of sessions whose indices are segIndices.
-        server.feature_filename_structure = os.path.join(self.base_dir, "feat", "{}.h5")
+        server.feature_filename_structure = os.path.join(self.BASE_DIR, "feat", "{}.h5")
         #BUG: don't use self.NUM_THREADS when assgining num_thread as it's prune to race-conditioning
         enroll_stat.accumulate_stat(ubm=ubm,
                                     feature_server=server,
@@ -100,24 +66,24 @@ class UBM():
         if SAVE_FLAG:
             # Save the status of the enroll data
             filename = "enroll_stat_{}.h5".format(self.NUM_GUASSIANS)
-            enroll_stat.write(os.path.join(self.base_dir, "ubm", filename))
+            enroll_stat.write(os.path.join(self.BASE_DIR, "ubm", filename))
 
 
 
     def evaluate(self, explain=True):
         ############################# READING ############################
         # Create Feature server
-        server = self.__createFeatureServer()
+        server = self.createFeatureServer()
         # Read the index for the test datas
-        test_ndx = sidekit.Ndx.read(os.path.join(self.base_dir, "task", "test_ndx.h5"))
+        test_ndx = sidekit.Ndx.read(os.path.join(self.BASE_DIR, "task", "test_ndx.h5"))
         # Read the UBM model
         ubm = sidekit.Mixture()
         model_name = "ubm_{}.h5".format(self.NUM_GUASSIANS)
-        ubm.read(os.path.join(self.base_dir, "ubm", model_name))
+        ubm.read(os.path.join(self.BASE_DIR, "ubm", model_name))
 
         ############################ Evaluating ###########################
         filename = "enroll_stat_{}.h5".format(self.NUM_GUASSIANS)
-        enroll_stat = sidekit.StatServer.read(os.path.join(self.base_dir, "ubm", filename))
+        enroll_stat = sidekit.StatServer.read(os.path.join(self.BASE_DIR, "ubm", filename))
         # MAP adaptation of enrollment speaker models
         enroll_sv = enroll_stat.adapt_mean_map_multisession(ubm=ubm,
                                                             r=3 # MAP regulation factor
@@ -131,12 +97,12 @@ class UBM():
                                             )
         # Save the model's Score object
         filename = "test_scores_{}.h5".format(self.NUM_GUASSIANS)
-        scores_gmm_ubm.write(os.path.join(self.base_dir, "result", filename))
+        scores_gmm_ubm.write(os.path.join(self.BASE_DIR, "result", filename))
         
         #write Analysis
         if explain:
             filename = "test_scores_explained_{}.txt".format(self.NUM_GUASSIANS)
-            fout = open(os.path.join(self.base_dir, "result", filename), "a")
+            fout = open(os.path.join(self.BASE_DIR, "result", filename), "a")
             fout.truncate(0) #clear content
             modelset = list(scores_gmm_ubm.modelset)
             segest = list(scores_gmm_ubm.segset)
@@ -153,10 +119,10 @@ class UBM():
     def plotDETcurve(self):
         # Read test scores
         filename = "test_scores_{}.h5".format(self.NUM_GUASSIANS)
-        scores_dir = os.path.join(self.base_dir, "result", filename)
+        scores_dir = os.path.join(self.BASE_DIR, "result", filename)
         scores_gmm_ubm = sidekit.Scores.read(scores_dir)
         # Read the key
-        key = sidekit.Key.read_txt(os.path.join(self.base_dir, "task", "test_trials.txt"))
+        key = sidekit.Key.read_txt(os.path.join(self.BASE_DIR, "task", "test_trials.txt"))
 
         # Make DET plot
         logging.info("Drawing DET Curve")
@@ -168,7 +134,7 @@ class UBM():
         prior = sidekit.logit_effective_prior(0.01, 10, 1)
         dp.plot_mindcf_point(prior, idx=0)
         graphname = "DET_GMM_UBM_{}.png".format(self.NUM_GUASSIANS)
-        dp.__figure__.savefig(os.path.join(self.base_dir, "result", graphname))
+        dp.__figure__.savefig(os.path.join(self.BASE_DIR, "result", graphname))
 
 
 
@@ -240,7 +206,7 @@ class UBM():
         import h5py
 
         filename = "test_scores_{}.h5".format(self.NUM_GUASSIANS)
-        filepath = os.path.join(self.base_dir, "result", filename)
+        filepath = os.path.join(self.BASE_DIR, "result", filename)
         h5 = h5py.File(filepath, mode="r")
         modelset = list(h5["modelset"])
         segest = list(h5["segset"])
