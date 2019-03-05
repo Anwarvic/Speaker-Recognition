@@ -34,6 +34,7 @@ import h5py
 import scipy
 import warnings
 import ctypes
+from tqdm import tqdm
 from sidekit.sv_utils import serialize
 from sidekit.statserver import StatServer
 from sidekit.mixture import Mixture
@@ -497,7 +498,7 @@ class FactorAnalyser:
                 _R = numpy.zeros((tv_rank * (tv_rank + 1) // 2), dtype=STAT_TYPE)
 
                 # Load data per batch to reduce the memory footprint
-                for batch_idx in batch_indices:
+                for batch_idx in tqdm(batch_indices, desc="Iteration #{}".format(it+1)):
 
                     stat0 = fh['stat0'][batch_idx, :]
                     stat1 = fh['stat1'][batch_idx, :]
@@ -620,6 +621,7 @@ class FactorAnalyser:
                     manager = multiprocessing.Manager()
                     q = manager.Queue()
                     pool = multiprocessing.Pool(num_thread + 2)
+                    # pool = multiprocessing.pool.ThreadPool(num_thread + 2)
 
                     # put Consumer to work first
                     watcher = pool.apply_async(e_gather, ((_A, _C, _R), q))
@@ -627,20 +629,22 @@ class FactorAnalyser:
                     jobs = []
 
                     # Load data per batch to reduce the memory footprint
-                    for batch_idx in batch_indices:
+                    for batch_idx in tqdm(batch_indices, desc="Iteration# {}".format(it+1)):
 
                         # Create list of argument for a process
                         arg = fh["stat0"][batch_idx, :], fh["stat1"][batch_idx, :], ubm, self.F
                         job = pool.apply_async(e_worker, (arg, q))
                         jobs.append(job)
+                    # print(len(jobs))
 
                     # collect results from the workers through the pool result queue
                     for job in jobs:
                         job.get()
-
+                    # print(len(jobs))
                     # now we are done, kill the consumer
                     q.put((None, None, None, None))
                     pool.close()
+                    
 
                     _A, _C, _R = watcher.get()
 
