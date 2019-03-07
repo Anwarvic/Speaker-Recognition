@@ -138,10 +138,6 @@ class UBM(SidekitModel):
         dp.__figure__.savefig(os.path.join(self.BASE_DIR, "result", graphname))
 
 
-
-    
-
-
     def getAccuracy(self):
         """
         This function is used to get the accuracy of the model. 
