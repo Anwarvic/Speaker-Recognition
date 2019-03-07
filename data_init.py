@@ -32,7 +32,7 @@ class Initializer():
         return sorted(set(enroll_models))
 
 
-    def create_idMap(self):
+    def create_idMap(self, group):
         """
         IdMap are used to store two lists of strings and to map between them.
         Most of the time, IdMap are used to associate names of segments (sessions)
@@ -46,20 +46,20 @@ class Initializer():
         start and stop time of the segment and to initialize a StatServer.
         """
         # Make enrollment (IdMap) file list
-        enroll_dir = os.path.join(self.AUDIO_DIR, "enroll") # enrollment data directory
-        enroll_files = os.listdir(enroll_dir)
-        enroll_models = [files.split('_')[0] for files in enroll_files] # list of model IDs
-        enroll_segments = ["enroll/"+f for f in enroll_files]
+        group_dir = os.path.join(self.AUDIO_DIR, group) # enrollment data directory
+        group_files = os.listdir(group_dir)
+        group_models = [files.split('_')[0] for files in group_files] # list of model IDs
+        group_segments = [group+"/"+f for f in group_files]
         
         # Generate IdMap
-        enroll_idmap = sidekit.IdMap()
-        enroll_idmap.leftids = np.asarray(enroll_models)
-        enroll_idmap.rightids = np.asarray(enroll_segments)
-        enroll_idmap.start = np.empty(enroll_idmap.rightids.shape, '|O')
-        enroll_idmap.stop = np.empty(enroll_idmap.rightids.shape, '|O')
-        if enroll_idmap.validate():
+        group_idmap = sidekit.IdMap()
+        group_idmap.leftids = np.asarray(group_models)
+        group_idmap.rightids = np.asarray(group_segments)
+        group_idmap.start = np.empty(group_idmap.rightids.shape, '|O')
+        group_idmap.stop = np.empty(group_idmap.rightids.shape, '|O')
+        if group_idmap.validate():
             #TODO: possibily adding tv_idmap.h5 and plda_idmap.h5
-            enroll_idmap.write(os.path.join(self.TASK_DIR, 'enroll_idmap.h5'))
+            group_idmap.write(os.path.join(self.TASK_DIR, group+'_idmap.h5'))
         else:
             raise RuntimeError('Problems with creating idMap file')
 
@@ -122,7 +122,8 @@ class Initializer():
         This is the main method for this class, it calls all previous
         methods... that's basically what it does :)
         """
-        self.create_idMap()
+        self.create_idMap("enroll")
+        self.create_idMap("test")
         self.create_test_trials()
         self.create_Ndx()
         print("DONE!!")
