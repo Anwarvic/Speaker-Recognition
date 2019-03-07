@@ -5,6 +5,7 @@ import warnings
 warnings.filterwarnings("ignore")
 import logging
 logging.basicConfig(level=logging.INFO)
+
 from model_interface import SidekitModel
 
 
@@ -96,18 +97,18 @@ class UBM(SidekitModel):
                                              num_thread=self.NUM_THREADS
                                             )
         # Save the model's Score object
-        filename = "test_scores_{}.h5".format(self.NUM_GUASSIANS)
+        filename = "ubm_scores_{}.h5".format(self.NUM_GUASSIANS)
         scores_gmm_ubm.write(os.path.join(self.BASE_DIR, "result", filename))
         
         #write Analysis
         if explain:
-            filename = "test_scores_explained_{}.txt".format(self.NUM_GUASSIANS)
+            filename = "ubm_scores_explained_{}.txt".format(self.NUM_GUASSIANS)
             fout = open(os.path.join(self.BASE_DIR, "result", filename), "a")
             fout.truncate(0) #clear content
             modelset = list(scores_gmm_ubm.modelset)
-            segest = list(scores_gmm_ubm.segset)
+            segset = list(scores_gmm_ubm.segset)
             scores = np.array(scores_gmm_ubm.scoremat)
-            for seg_idx, seg in enumerate(segest):
+            for seg_idx, seg in enumerate(segset):
                 fout.write("Wav: {}\n".format(seg))
                 for speaker_idx, speaker in enumerate(modelset):
                     fout.write("\tSpeaker {}:\t{}\n".format(speaker, scores[speaker_idx, seg_idx]))
@@ -118,7 +119,7 @@ class UBM(SidekitModel):
 
     def plotDETcurve(self):
         # Read test scores
-        filename = "test_scores_{}.h5".format(self.NUM_GUASSIANS)
+        filename = "ubm_scores_{}.h5".format(self.NUM_GUASSIANS)
         scores_dir = os.path.join(self.BASE_DIR, "result", filename)
         scores_gmm_ubm = sidekit.Scores.read(scores_dir)
         # Read the key
@@ -138,60 +139,7 @@ class UBM(SidekitModel):
 
 
 
-    def __getAccuracy(self, speakers, test_files, scores, mode=2, threshold=0):
-        """
-        This private method is used to get the accuracy of a model
-        given five pieces of information:
-        -> speakers: list of speakers
-        -> test_files: list of filenames that used to evaluate model
-        -> scores: score numpy matrix obtained by the model
-        -> mode: which is one of these values [0, 1, 2] where:
-            -> 0: means get verification accuracy.
-            -> 1: means get recognition accuracy.
-            -> 2: means get both accuracy, verification and recognition.
-        -> threshold: the value above which we will consider the verification
-                is done correctly. In other words, if the score>threshold, then
-                the answer is considered; otherwise, the answer is not considered
-        And it should return the accuracy of the model in percentage
-        """
-        assert mode in [0, 1, 2],\
-            "The model variable must be one of these values[0, 1, 2]"
-        assert scores.shape == (len(speakers), len(test_files)),\
-            "The dimensions of the input don't match"
-        accuracy = 0.
-        speakers = [sp.decode() for sp in speakers]
-        max_indices = np.argmax(scores, axis=0)
-        max_scores = np.max(scores, axis=0)
-        for idx, test_filename in enumerate(test_files):
-            test_filename = test_filename.decode() #convert from byte to string
-            actual_speaker = test_filename.split("/")[-1].split("_")[0]
-            predicted_speaker = speakers[max_indices[idx]]
-            #TODO: 
-            ########## JUST VERIFICATION ##########
-            if mode == 0:
-                if max_scores[idx] < threshold:
-                    continue
-                else:
-                    accuracy += 1.
-            ########## JUST RECOGNITION ##########
-            elif mode == 1:
-                #skip speakers outside the training
-                if actual_speaker not in speakers:
-                    continue
-                else:
-                    if predicted_speaker == actual_speaker:
-                        accuracy += 1.
-            ########## VERIFICATION & RECOGNITION ##########
-            elif mode == 2:
-                #skip speakers outside the training
-                if max_scores[idx] < threshold:
-                    continue
-                else:
-                    if predicted_speaker == actual_speaker:
-                        accuracy += 1.
-
-        return accuracy/len(test_files)
-
+    
 
 
     def getAccuracy(self):
@@ -213,15 +161,15 @@ class UBM(SidekitModel):
         scores = np.array(h5["scores"])
         
         #get Accuracy
-        accuracy = self.__getAccuracy(modelset, segest, scores, mode=2, threshold=0)
+        accuracy = super().getAccuracy(modelset, segest, scores, mode=2, threshold=0)
         return accuracy
 
 
 
 if __name__ == "__main__":
     ubm = UBM()
-    ubm.train()
-    ubm.evaluate()
-    ubm.plotDETcurve()
+    # ubm.train()
+    # ubm.evaluate()
+    # ubm.plotDETcurve()
     # ubm.NUM_GUASSIANS = 64
-    print( "Accuracy: {}%".format(ubm.getAccuracy()) )
+    print( "Accuracy: {}%".format(ubm.getAccuracy()*100) )
