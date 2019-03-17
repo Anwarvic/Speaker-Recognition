@@ -50,7 +50,7 @@ d = {
         }
 ```
 ## How it Works
-The sideKit pipeline consists of five steps as shown in the following image:
+The sideKit pipeline consists of six steps as shown in the following image:
 <p align="center">
 <img src="http://www.mediafire.com/convkey/cc16/r56t49ybirn455izg.jpg" /> 
 </p>
