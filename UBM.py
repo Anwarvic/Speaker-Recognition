@@ -68,7 +68,7 @@ class UBM(SidekitModel):
         if SAVE_FLAG:
             # Save the status of the enroll data
             filename = "enroll_stat_{}.h5".format(self.NUM_GUASSIANS)
-            enroll_stat.write(os.path.join(self.BASE_DIR, "ubm", filename))
+            enroll_stat.write(os.path.join(self.BASE_DIR, "stat", filename))
 
 
 
@@ -85,7 +85,7 @@ class UBM(SidekitModel):
 
         ############################ Evaluating ###########################
         filename = "enroll_stat_{}.h5".format(self.NUM_GUASSIANS)
-        enroll_stat = sidekit.StatServer.read(os.path.join(self.BASE_DIR, "ubm", filename))
+        enroll_stat = sidekit.StatServer.read(os.path.join(self.BASE_DIR, "stat", filename))
         # MAP adaptation of enrollment speaker models
         enroll_sv = enroll_stat.adapt_mean_map_multisession(ubm=ubm,
                                                             r=3 # MAP regulation factor
