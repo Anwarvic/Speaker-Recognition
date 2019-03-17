@@ -27,6 +27,8 @@ class UBM(SidekitModel):
         server = self.createFeatureServer("enroll")
         logging.info("Training...")
         ubm = sidekit.Mixture()
+        # Set the model name
+        ubm.name = "ubm_{}.h5".format(self.NUM_GUASSIANS) 
         # Expectation-Maximization estimation of the Mixture parameters.
         ubm.EM_split(features_server=server, #sidekit.FeaturesServer used to load data
                      feature_list=train_list, # list of feature files to train the model
@@ -46,9 +48,8 @@ class UBM(SidekitModel):
         # -> 8 iterations of EM with 512 distributions
         # -> 8 iterations of EM with 1024 distributions
         model_dir = os.path.join(self.BASE_DIR, "ubm")
-        modelname = "ubm_{}.h5".format(self.NUM_GUASSIANS)
-        logging.info("Saving the model {} at {}".format(modelname, model_dir))
-        ubm.write(os.path.join(model_dir, modelname))
+        logging.info("Saving the model {} at {}".format(ubm.name, model_dir))
+        ubm.write(os.path.join(model_dir, ubm.name))
 
         # Read idmap for the enrolling data
         enroll_idmap = sidekit.IdMap.read(os.path.join(self.BASE_DIR, "task", "enroll_idmap.h5"))
@@ -164,7 +165,7 @@ class UBM(SidekitModel):
 
 if __name__ == "__main__":
     ubm = UBM()
-    # ubm.train()
+    ubm.train()
     # ubm.evaluate()
     # ubm.plotDETcurve()
     # ubm.NUM_GUASSIANS = 64
