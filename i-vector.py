@@ -197,7 +197,6 @@ class IVector(SidekitModel):
 
 
 
-
 if __name__ == "__main__":
     iv = IVector()
     iv.train_tv()
