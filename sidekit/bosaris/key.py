@@ -71,7 +71,9 @@ class Key:
         """
         self.modelset = numpy.empty(0, dtype="|O")
         self.segset = numpy.empty(0, dtype="|O")
+        #targets
         self.tar = numpy.array([], dtype="bool")
+        #non-targets
         self.non = numpy.array([], dtype="bool")
 
         if key_file_name == '':
