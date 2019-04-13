@@ -58,8 +58,6 @@ def splitSpeakers(enroll_num, test_num):
     remaining_ids = list(total_ids - EXCLUDED_IDS)
     #shuffle
     random.shuffle(remaining_ids)
-    #split based on the ratio
-    # split_index = int(len(remaining_ids)*ratio)
     enrollIDs = remaining_ids[0 : enroll_num]
     testIDs = remaining_ids[enroll_num : enroll_num+test_num]
     return enrollIDs, testIDs
@@ -142,7 +140,6 @@ def copyData(inDir, outDir, enrollIDs, testIDs):
         end = ENROLL_REPS+TEST_REPS+1
         copyFiles(inDir, test_outDir, gender, speakerID, start, end)
 
-    
 
 
 
@@ -151,7 +148,7 @@ def copyData(inDir, outDir, enrollIDs, testIDs):
 
 
 if __name__ == "__main__":
-    INDIR = "/media/anwar/D/Data/ASR/Arabic_Corpus_of_Isolated_Words"
+    INDIR = "/media/anwar/D/Data/ASR/Arabic_Corpus_of_Isolated_Words/mono_16k"
     OUTDIR = "/media/anwar/E/Voice_Biometrics/SIDEKIT-1.3/py3env/audio"
     if not os.path.exists(OUTDIR):
         os.mkdir(OUTDIR)
