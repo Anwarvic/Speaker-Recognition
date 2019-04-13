@@ -16,10 +16,10 @@ class UBM(SidekitModel):
     def __init__(self):
         super().__init__()
         # Number of Guassian Distributions
-        self.NUM_GUASSIANS = 32
-    
+        self.NUM_GUASSIANS = 16
 
-    def train(self, SAVE_FLAG=True):
+
+    def train(self, SAVE=True):
         #SEE: https://projets-lium.univ-lemans.fr/sidekit/tutorial/ubmTraining.html
         train_list = os.listdir(os.path.join(self.BASE_DIR, "audio", "enroll"))
         for i in range(len(train_list)):
@@ -65,7 +65,7 @@ class UBM(SidekitModel):
                                     feature_server=server,
                                     seg_indices=range(enroll_stat.segset.shape[0])
                                    )
-        if SAVE_FLAG:
+        if SAVE:
             # Save the status of the enroll data
             filename = "enroll_stat_{}.h5".format(self.NUM_GUASSIANS)
             enroll_stat.write(os.path.join(self.BASE_DIR, "stat", filename))
@@ -139,7 +139,7 @@ class UBM(SidekitModel):
         dp.__figure__.savefig(os.path.join(self.BASE_DIR, "result", graphname))
 
 
-    def getAccuracy(self):
+    def getAccuracy(self, result_mode):
         """
         This function is used to get the accuracy of the model. 
         It reads the "test_scores_{}.h5" file that we got  using the 
@@ -148,9 +148,10 @@ class UBM(SidekitModel):
         distributions is 32, then the file read will be "test_scores_32.h5",
         This method should return the Accuracy of the model in percentage.
         """
+        assert result_mode in [0, 1, 2], "Accuracy mode must be either 0, 1 or 2!!"
         import h5py
 
-        filename = "test_scores_{}.h5".format(self.NUM_GUASSIANS)
+        filename = "ubm_scores_{}.h5".format(self.NUM_GUASSIANS)
         filepath = os.path.join(self.BASE_DIR, "result", filename)
         h5 = h5py.File(filepath, mode="r")
         modelset = list(h5["modelset"])
@@ -158,7 +159,7 @@ class UBM(SidekitModel):
         scores = np.array(h5["scores"])
         
         #get Accuracy
-        accuracy = super().getAccuracy(modelset, segest, scores, mode=2, threshold=0)
+        accuracy = super().getAccuracy(modelset, segest, scores, mode=result_mode, threshold=0)
         return accuracy
 
 
@@ -166,7 +167,7 @@ class UBM(SidekitModel):
 if __name__ == "__main__":
     ubm = UBM()
     ubm.train()
-    # ubm.evaluate()
-    # ubm.plotDETcurve()
-    # ubm.NUM_GUASSIANS = 64
-    print( "Accuracy: {}%".format(ubm.getAccuracy()*100) )
+    ubm.evaluate()
+    ubm.plotDETcurve()
+    for mode in [0, 1, 2]:
+        print( "Accuracy: {}%".format(ubm.getAccuracy(mode)*100) )
