@@ -383,7 +383,7 @@ class FactorAnalyser:
         if save_init:
             self.write(output_file_name + "_init.h5")
 
-        # Estimate  TV iteratively
+        # Estimate TV iteratively
         for it in range(nb_iter):
             # Create accumulators for the list of models to process
             _A = numpy.zeros((nb_distrib, tv_rank, tv_rank), dtype=STAT_TYPE)
@@ -715,7 +715,7 @@ class FactorAnalyser:
         # Replicate self.stat0
         index_map = numpy.repeat(numpy.arange(nb_distrib), feature_size)
 
-        for sess in range(stat_server.segset.shape[0]):
+        for sess in tqdm(range(stat_server.segset.shape[0]), desc="Processing"):
 
             inv_lambda = scipy.linalg.inv(numpy.eye(tv_rank) + (self.F.T *
                                                                 stat_server.stat0[sess, index_map]).dot(self.F))
