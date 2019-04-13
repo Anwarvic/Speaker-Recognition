@@ -23,7 +23,7 @@ class IVector(SidekitModel):
         self.RANK_TV = 400  # Rank of the total variability matrix
         self.TV_ITERATIONS = 10  # number of iterations to run over the variability matrix
         #DON'T KNOW YET
-        self.ENABLE_PLDA = True
+        # self.ENABLE_PLDA = True
     
     
 
@@ -130,7 +130,7 @@ class IVector(SidekitModel):
             os.remove(f)
     
 
-    def evaluate(self):
+    def evaluate(self, explain=True):
         """
         This method is used to score our trained model. 
         """
@@ -146,7 +146,8 @@ class IVector(SidekitModel):
 
         # Extract i-vectors from enrollment data
         logging.info("Extracting i-vectors from enrollment data")
-        enroll_stat = sidekit.StatServer.read(os.path.join(self.BASE_DIR, 'stat', 'enroll_stat_32.h5'))
+        filename = 'enroll_stat_{}.h5'.format(self.NUM_GUASSIANS)
+        enroll_stat = sidekit.StatServer.read(os.path.join(self.BASE_DIR, 'stat', filename))
         enroll_iv = fa.extract_ivectors_single( ubm=ubm,
                                                 stat_server=enroll_stat,
                                                 uncertainty=False
@@ -154,7 +155,8 @@ class IVector(SidekitModel):
     
         # Extract i-vectors from test data
         logging.info("Extracting i-vectors from test data")
-        test_stat = sidekit.StatServer.read(os.path.join(self.BASE_DIR, 'stat', 'test_stat.h5'))
+        filename = 'test_stat_{}.h5'.format(self.NUM_GUASSIANS)
+        test_stat = sidekit.StatServer.read(os.path.join(self.BASE_DIR, 'stat', filename))
         test_iv = fa.extract_ivectors_single(ubm=ubm,
                                              stat_server=test_stat,
                                              uncertainty=False
@@ -172,6 +174,21 @@ class IVector(SidekitModel):
         filename = "ivector_scores_cos_{}.h5".format(self.NUM_GUASSIANS)
         scores_cos.write(os.path.join(self.BASE_DIR, "result", filename))
         
+        #write Analysis
+        if explain:
+            modelset = list(scores_cos.modelset)
+            segset = list(scores_cos.segset)
+            scores = np.array(scores_cos.scoremat)
+            filename = "ivector_scores_explained_{}.txt".format(iv.NUM_GUASSIANS)
+            fout = open(os.path.join(iv.BASE_DIR, "result", filename), "a")
+            fout.truncate(0) #clear content
+            for seg_idx, seg in enumerate(segset):
+                fout.write("Wav: {}\n".format(seg))
+                for speaker_idx, speaker in enumerate(modelset):
+                    fout.write("\tSpeaker {}:\t{}\n".format(speaker, scores[speaker_idx, seg_idx]))
+                fout.write("\n")
+            fout.close()
+        
     # def _________________plda():
         # plda = os.path.join(self.BASE_DIR, "stat", "plda_stat")
         # # Load sufficient statistics and extract i-vectors from PLDA training data
@@ -181,7 +198,8 @@ class IVector(SidekitModel):
         #                               num_thread=self.NUM_THREADS
         #                              )
 
-    def getAccuracy(self):
+    def getAccuracy(self, accuracy_mode):
+        assert accuracy_mode in [0, 1, 2], "Accuracy mode must be either 0, 1 or 2!!"
         import h5py
 
         filename = "ivector_scores_cos_{}.h5".format(self.NUM_GUASSIANS)
@@ -192,28 +210,15 @@ class IVector(SidekitModel):
         scores = np.array(h5["scores"])
         
         #get Accuracy
-        accuracy = super().getAccuracy(modelset, segest, scores, mode=2, threshold=0)
+        accuracy = super().getAccuracy(modelset, segest, scores, mode=accuracy_mode, threshold=0)
         return accuracy
 
 
 
 if __name__ == "__main__":
     iv = IVector()
-    iv.train_tv()
-    # print( "Accuracy: {}%".format(iv.getAccuracy()*100) )
-    # import h5py
-    
-    # filepath = "/media/anwar/E/Voice_Biometrics/SIDEKIT-1.3/py3env/result/ivector_scores.h5"
-    # h5 = h5py.File(filepath, mode="r")
-    # modelset = list(h5.get("modelset"))
-    # segset = list(h5.get("segset"))
-    # scores = np.array(h5.get("scores"))
-    # filename = "ivector_scores_explained_{}.txt".format(iv.NUM_GUASSIANS)
-    # fout = open(os.path.join(iv.BASE_DIR, "result", filename), "a")
-    # fout.truncate(0) #clear content
-    # for seg_idx, seg in enumerate(segset):
-    #     fout.write("Wav: {}\n".format(seg))
-    #     for speaker_idx, speaker in enumerate(modelset):
-    #         fout.write("\tSpeaker {}:\t{}\n".format(speaker, scores[speaker_idx, seg_idx]))
-    #     fout.write("\n")
-    # fout.close()
+    # iv.train_tv()
+    iv.NUM_GUASSIANS = 16
+    iv.evaluate()
+    for mode in [0, 1, 2]:
+        print( "Accuracy: {}%".format(iv.getAccuracy(mode)*100) )
