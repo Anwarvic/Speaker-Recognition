@@ -1,9 +1,15 @@
 import os
+import yaml
 import subprocess
 import h5py
 import numpy as np
 
 
+
+def safe_makedir(dirname):
+    """This function takes a directory name as an argument"""
+    if not os.path.exists(dirname):
+        os.makedirs(dirname)
 
 
 def explore_file(filepath):
@@ -21,18 +27,36 @@ def explore_file(filepath):
         print("="*25)
 
 
-def preprocessAudioFile(inwav, outwav, sample_rate, n_channels, bit=16):
+def convert_wav(inpath, outpath, no_channels, sampling_rate, bit_precision,
+                showWarning=False):
     """
-    This function is used to preprocess audio for SideKit.
-    As we can see, the only default value set is for precision (16-bit)
-    and that's because SideKit has problems for other precisions.
-    And all audio files need to be the same criteria.
-    NOTE:
-    It only reads wav files in PCM format, so make sure that's the case!!
+    Convert the waves to a pre-defined sampling rate, number of channels and
+    bit-precision using SoX tool. So, it should be installed
     """
-    parent, _ = os.path.split(outwav)
-    if not os.path.exists(parent):
-        os.mkdir(parent)
-    command = "sox {} -r {} -c {} -b {} {}"\
-                    .format(inwav, sample_rate, n_channels, bit, outwav)
-    subprocess.call(command, shell=True) 
+    parent, _ = os.path.split(outpath)
+    safe_makedir(parent)
+    command = "sox {} -r {} -c {} -b {} {}".format( inpath,
+                                                    sampling_rate,
+                                                    no_channels,
+                                                    bit_precision,
+                                                    outpath)
+    if showWarning:
+        subprocess.call(command, shell=True) 
+    else:
+        with open(os.devnull, 'w') as FNULL:
+            subprocess.call(command, shell=True, stdout=FNULL,
+                                                    stderr=subprocess.STDOUT)
+
+
+def parse_yaml(filepath):
+    """
+    This method parses the YAML configuration file and returns the parsed info
+    as python dictionary.
+    """
+    with open(filepath, 'r') as fin:
+        try:
+            conf_dictionary = yaml.safe_load(fin)
+            return conf_dictionary
+        except Exception as exc:
+            print("ERROR while parsing YAML conf.")
+            print(exc)
