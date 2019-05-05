@@ -1,0 +1,57 @@
+#---! THIS FILE SHOULD BE MODIFIED BASED ON YOUR CASE
+
+#These variables should be changed
+inpath: /media/anwar/D/Data/ASR/Merged_Arabic_Corpus_of_Isolated_Words/original #where input wave data exist
+outpath: /media/anwar/E/Voice_Biometrics/SIDEKIT-1.3/py3env/exp/phase02 #where the program outputs exist
+
+
+#training configuration
+#NOTE: the summation of following sessions must be less than or equal 10
+enroll_sessions: 3 #number of sessions to be included in the training set
+test_sessions: 5   #number of sessions to be included in the test set
+
+
+#preprocessing configurations
+sampling_rate: 44100
+bit_precision: 16
+no_channels: 1
+
+
+#features configuration (NOTE: to disable a feature, assign it to None)
+features:
+  - vad #voice-activity-dectection
+  - energy #log-energy
+  - cep #cepstral coefficients
+  - fb #filter-banks
+  #- bnf
+cepstral_coefficients: 19
+filter_bank: log #filter bank can either be "log" for logarithmic and "lin" for linear
+filter_bank_size: 24
+lower_frequency: 300
+higher_frequency: 3400
+vad: snr #can be either "energy", "snr", "percentil" or "lbl".
+snr_ratio: 40 #signal-to-noise ratio 
+window_size: 0.025 #in seconds (25 milliseconds)
+window_shift: 0.010 #in seconds (10 milliseconds)
+
+
+#UBM configuration
+num_gaussians: 64
+
+
+#i-vectors (tv) configurations (depends on UBM configurations)
+batch_size: 30 #size of data batch
+tv_rank: 25 # Rank of the total variability matrix
+tv_iterations: 50 # number of iterations to train the variability matrix
+scoring: cosine #can be either "cosine", or "mahalanobis", or "two_covariance"
+
+#i-vectors (PLDA) configurations (depends on TV configuration)
+
+
+
+
+#plotting configuration
+DET_curve: rocch #you can choose either 'rocch' or 'steppy'
+
+
+#other configuration
