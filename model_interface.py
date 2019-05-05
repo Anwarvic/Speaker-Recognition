@@ -1,22 +1,21 @@
 import os
 import sidekit
 import numpy as np
-from multiprocessing import cpu_count
 import logging
 logging.basicConfig(level=logging.INFO)
+from multiprocessing import cpu_count
+from utils import parse_yaml
 
 
 
 class SidekitModel():
 
-    def __init__(self):
-        ############ Global Variables ###########
+    def __init__(self, conf_filepath):
+        self.conf = parse_yaml(conf_filepath)
         # use 0 to disable multi-processing
         self.NUM_THREADS = cpu_count()
-        # Number of Guassian Distributions
-        self.NUM_GUASSIANS = 128
         # The parent directory of the project
-        self.BASE_DIR = "/media/anwar/E/Voice_Biometrics/SIDEKIT-1.3/py3env"
+        self.BASE_DIR = self.conf['outpath']
     
 
     def createFeatureServer(self, group=None):
@@ -30,14 +29,16 @@ class SidekitModel():
         # delta: if True, append the first order derivative
         # double_delta: if True, append the second order derivative
         # rasta: if True, perform RASTA filtering
-        # keep_all_features: boolean, if True, keep all features, if False, keep frames according to the vad labels
-        server = sidekit.FeaturesServer(feature_filename_structure=os.path.join(feat_dir, "{}.h5"),
-                                        dataset_list=["vad", "energy", "cep", "fb"],
-                                        feat_norm="cmvn",
-                                        delta=True,
-                                        double_delta=True,
-                                        rasta=True,
-                                        keep_all_features=True)
+        # keep_all_features: boolean, if True, keep all features; if False,
+        #       keep frames according to the vad labels
+        server = sidekit.FeaturesServer(
+                feature_filename_structure=os.path.join(feat_dir, "{}.h5"),
+                dataset_list=self.conf['features'],
+                feat_norm="cmvn", #cepstral mean-variance normalization
+                delta=True,
+                double_delta=True,
+                rasta=True,
+                keep_all_features=True)
         logging.info("Feature-Server is created")
         logging.debug(server)
         return server
@@ -77,7 +78,7 @@ class SidekitModel():
         max_scores = np.max(scores, axis=0)
         for idx, test_filename in enumerate(test_files):
             test_filename = test_filename.decode() #convert from byte to string
-            actual_speaker = test_filename.split("/")[-1].split("_")[0]
+            actual_speaker = test_filename.split("/")[-1].split(".")[0]
             predicted_speaker = speakers[max_indices[idx]]
             #TODO: 
             ########## JUST VERIFICATION ##########
