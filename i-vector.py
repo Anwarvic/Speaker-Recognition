@@ -15,13 +15,13 @@ from model_interface import SidekitModel
 class IVector(SidekitModel):
     """Identity Vectors"""
     
-    def __init__(self):
-        super().__init__()
+    def __init__(self, conf_path):
+        super().__init__(conf_path)
         # Set parameters of your system
-        self.NUM_GUASSIANS = 64  # number of Gaussian distributions for each GMM
-        self.BATCH_SIZE = 30
-        self.RANK_TV = 400  # Rank of the total variability matrix
-        self.TV_ITERATIONS = 10  # number of iterations to run over the variability matrix
+        self.NUM_GUASSIANS = self.conf['num_gaussians']  # number of Gaussian distributions for each GMM
+        self.BATCH_SIZE = self.conf['batch_size']
+        self.TV_RANK = self.conf['tv_rank']
+        self.TV_ITERATIONS = self.conf['tv_iterations']
         #DON'T KNOW YET
         # self.ENABLE_PLDA = True
     
@@ -49,19 +49,20 @@ class IVector(SidekitModel):
         # Jointly compute the sufficient statistics of TV and PLDA data
         back_filename = 'back_stat_{}.h5'.format(self.NUM_GUASSIANS)
         if not os.path.isfile(os.path.join(self.BASE_DIR, "stat", back_filename)):
-            #BUG: don't use self.NUM_THREADS when assgining num_thread as it's prune to race-conditioning
-            back_stat.accumulate_stat( ubm=ubm,
-                                    feature_server=fs,
-                                    seg_indices=range(back_stat.segset.shape[0])
-                                    )
+            #BUG: don't use self.NUM_THREADS when assgining num_thread
+            # as it's prune to race-conditioning
+            back_stat.accumulate_stat(
+                ubm=ubm,
+                feature_server=fs,
+                seg_indices=range(back_stat.segset.shape[0])
+                )
             back_stat.write(os.path.join(self.BASE_DIR, "stat", back_filename))
         
         # Load the sufficient statistics from TV training data
         tv_filename = 'tv_stat_{}.h5'.format(self.NUM_GUASSIANS)
         if not os.path.isfile(os.path.join(self.BASE_DIR, "stat", tv_filename)):
-            tv_stat = sidekit.StatServer.read_subset(os.path.join(self.BASE_DIR, "stat", back_filename),
-                                                     tv_idmap
-                                                    )
+            tv_stat = sidekit.StatServer.read_subset(
+                os.path.join(self.BASE_DIR, "stat", back_filename),tv_idmap)
             tv_stat.write(os.path.join(self.BASE_DIR, "stat", tv_filename))
         
         # Load sufficient statistics and extract i-vectors from PLDA training data
@@ -111,7 +112,7 @@ class IVector(SidekitModel):
         fa = sidekit.FactorAnalyser()
         fa.total_variability_single(os.path.join(self.BASE_DIR, "stat", tv_filename),
                                     ubm,
-                                    tv_rank=self.RANK_TV,
+                                    tv_rank=self.TV_RANK,
                                     nb_iter=self.TV_ITERATIONS,
                                     min_div=True,
                                     tv_init=None,
@@ -189,7 +190,7 @@ class IVector(SidekitModel):
                 fout.write("\n")
             fout.close()
         
-    # def _________________plda():
+    # def __plda():
         # plda = os.path.join(self.BASE_DIR, "stat", "plda_stat")
         # # Load sufficient statistics and extract i-vectors from PLDA training data
         # plda_iv = fa.extract_ivectors(ubm=ubm,
@@ -210,15 +211,19 @@ class IVector(SidekitModel):
         scores = np.array(h5["scores"])
         
         #get Accuracy
-        accuracy = super().getAccuracy(modelset, segest, scores, mode=accuracy_mode, threshold=0)
+        accuracy = super().getAccuracy(modelset,
+                                       segest,
+                                       scores,
+                                       mode=accuracy_mode,
+                                       threshold=0)
         return accuracy
 
 
 
 if __name__ == "__main__":
-    iv = IVector()
-    # iv.train_tv()
-    iv.NUM_GUASSIANS = 16
+    conf_path = "py3env/conf.yaml"
+    iv = IVector(conf_path)
+    iv.train_tv()
     iv.evaluate()
-    for mode in [0, 1, 2]:
+    for mode in [1, 2]:
         print( "Accuracy: {}%".format(iv.getAccuracy(mode)*100) )
