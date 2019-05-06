@@ -21,14 +21,26 @@ To run SIDEKIT on your machine, you need to:
 - Install tkinter by running `sudo apt-get install python3.6-tk`.
 - Install libSVM by running `sudo apt-get install libsvm-dev`. This library dedicated to SVM classifiers.
 
-Now, let's install SIDEKIT. We can either install it using `pip install sidekit`. However, the library isn't stable and requires some manuevering so I cloned the project from gitLab using`git clone https://git-lium.univ-lemans.fr/Larcher/sidekit.git`. So, you just need to clone my project and you are ready to go!!
+**NOTE**:
+
+Three is no need to install SIDEKIT as the library isn't stable and requires some manuevering so I cloned the project from gitLab using`git clone https://git-lium.univ-lemans.fr/Larcher/sidekit.git` and did some editing. So, you just need to clone my project and you are ready to go!!
 
 ## Download Dataset
-This project is just a proof-of-concept, so it was built using a small open-source dataset called the "Arabic Corpus of Isolated Words" made by the [University of Stirling](http://www.cs.stir.ac.uk/) located in the Central Belt of Scotland. This dataset can be downloaded from the official website right [here](http://www.cs.stir.ac.uk/~lss/arabic/). The "Arabic speech corpus for isolated words" contains about 10,000 utterances (9992 utterances to be precise) of 20 words spoken by 50 native male Arabic speakers. It has been recorded with a 44100 Hz sampling rate and 16-bit resolution in the raw format (.wav files). This corpus is free for noncommercial uses.
+This project is just a proof-of-concept, so it was built using the merged vesion of a small open-source dataset called the "Arabic Corpus of Isolated Words" made by the [University of Stirling](http://www.cs.stir.ac.uk/) located in the Central Belt of Scotland. This dataset can be downloaded from the official website right [here](https://www.kaggle.com/mohamedanwarvic/merged-arabic-corpus-of-isolated-words). 
 
-After downloading the dataset youand extracting it, you need to create about 50 folders with the name of "S+speakerId" like so S01, S02, ... S50. Each one of these folders should contain around 200 audio files for every speaker, each audio file contains the audio of the speaker speaking just one word. Notice that the naming of these audio files has certain information that we surely need. So for example the audio file named as "S01.02.03.wav", this means that the wav was created by the speaker whose id is "1", saying the word "03" which is "اثنان", for the "second" repetition. Each speaker has around 200 wav files, saying 20 different words 10 times. And these words are:
+This dataset is a voice-recorded dataset of 50 Native-Arabic speakers saying 20 words about 10 times. It has been recorded with a 44100 Hz sampling rate and 16-bit resolution. This dataset can be used for tasks Speaker Recognition, Speaker Verification, Voice biometrics, ... etc.
+
+This dataset (1GB) is divided into:
+
+- 50 Speakers (starting from S01 ending at S50.
+- 47 of these speakers are Male and just 3 are females and they are: S11, S36, and S44.
+- Each speaker is in a separate directory named after the speaker id.
+- Each speaker recorded 2 waves, about 10 times (sessions). So, each speaker should contain 20 wave files.
+- These two waves are names as `{speaker_id}.{session_id}.digits.wav` which contain the recordings of the Arabic digits from zero to 9. And `{speaker_id}.{session_id}.words.wav` which contain the recordings of some random Arabic words.
+
+After downloading the dataset and extracting it, you will find about  50 folders with the name of "S+speakerId" like so S01, S02, ... S50. Each one of these folders should contain around 20 audio files for every speaker, each audio file contains the audio of the speaker speaking 10 in a single WAV file words. This is repeated for 10 times/sessions. And these words are:
 ```
-d = {
+first_wav_words = {
         "01": "صِفْرْ", 
         "02":"وَاحِدْ",
         "03":"إِثنَانِْ",
@@ -38,41 +50,47 @@ d = {
         "07":"سِتَّةْ",
         "08":"سَبْعَةْ",
         "09":"ثَمَانِيَةْ",
-        "10":"تِسْعَةْ",
-        "11":"التَّنْشِيطْ",
-        "12":"التَّحْوِيلْ",
-        "13":"الرَّصِيدْ",
-        "14":"التَّسْدِيدْ",
-        "15":"نَعَمْ",
-        "16":"لَا",
-        "17":"التَّمْوِيلْ",
-        "18":"الْبَيَانَاتْ",
-        "19":"الْحِسَابْ",
-        "20":"إِنْهَاءْ"
-        }
+        "10":"تِسْعَةْ"
+}
+
+second_wav_words = {
+        "01":"التَّنْشِيطْ",
+        "02":"التَّحْوِيلْ",
+        "03":"الرَّصِيدْ",
+        "04":"التَّسْدِيدْ",
+        "05":"نَعَمْ",
+        "06":"لَا",
+        "07":"التَّمْوِيلْ",
+        "08":"الْبَيَانَاتْ",
+        "09":"الْحِسَابْ",
+        "10":"إِنْهَاءْ"
+}
 ```
+
 ## How it Works
 The sideKit pipeline consists of six steps as shown in the following image:
+
 <p align="center">
 <img src="http://www.mediafire.com/convkey/cc16/r56t49ybirn455izg.jpg" /> 
 </p>
+
 As we can see, the pipeline consists of six main steps:
 
 - **Preprocessing**: In this step, we perform some processing over the wav files to be consistent like changing the bit-rate, sampling rare, number of channels, ... etc. Besides dividing the data into *training (or enroll)* and *testing*.
-- **Feature Extraction**: In this step, we extract pre-defind features from the wav files.
 - **Structure**: In this step, we produce some files that will be helpful when training and evaluating our model.
+- **Feature Extraction**: In this step, we extract pre-defind features from the wav files.
 - **Choosing A Model**: In this step, we choose a certain model, out of four, to be trained. We have five models that can be trained:
 	- UBM
 	- SVM with GMM
 	- I-vector
 	- Deep Learning
 - **Training**: This step is pretty self-explanatory ... com'on.
-- **Evaluating**: This step is used to evaluate our model. We have two ways of evaluating a model. The first one is to draw the DET (Detection Error Tradeoff) graph. And the second is getting the accuracy percentage.
+- **Evaluating**: This step is used to evaluate our model using a test set.
 
 Let's talk about each one of these in more details:
 
 ### 1. Preprocessing
-The file responsible for data pre-processing is `data_preprocessing.py` in which I split the whole data into two groups (one for training -enroll- and the other for testing) beside doing some preprocessing over the wav files, to match the case that I'm creating this model for, like: 
+The file responsible for data pre-processing is `data_init.py` in which I split the whole data into two groups (one for training -enroll- and the other for testing) beside doing some preprocessing over the wav files, to match the case that I'm creating this model for, like: 
 
 - Setting the sample rate to 16000.
 - Setting the number of channels to one (mono).
