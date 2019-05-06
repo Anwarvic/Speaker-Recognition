@@ -22,8 +22,6 @@ class IVector(SidekitModel):
         self.BATCH_SIZE = self.conf['batch_size']
         self.TV_RANK = self.conf['tv_rank']
         self.TV_ITERATIONS = self.conf['tv_iterations']
-        #DON'T KNOW YET
-        # self.ENABLE_PLDA = True
     
     
 
@@ -175,7 +173,7 @@ class IVector(SidekitModel):
         filename = "ivector_scores_cos_{}.h5".format(self.NUM_GUASSIANS)
         scores_cos.write(os.path.join(self.BASE_DIR, "result", filename))
         
-        #write Analysis
+        # Explain the Analysis by writing more readible text file
         if explain:
             modelset = list(scores_cos.modelset)
             segset = list(scores_cos.segset)
@@ -199,10 +197,9 @@ class IVector(SidekitModel):
         #                               num_thread=self.NUM_THREADS
         #                              )
 
-    def getAccuracy(self, accuracy_mode):
-        assert accuracy_mode in [0, 1, 2], "Accuracy mode must be either 0, 1 or 2!!"
+    def getAccuracy(self):
         import h5py
-
+        # Load scores file
         filename = "ivector_scores_cos_{}.h5".format(self.NUM_GUASSIANS)
         filepath = os.path.join(self.BASE_DIR, "result", filename)
         h5 = h5py.File(filepath, mode="r")
@@ -210,7 +207,7 @@ class IVector(SidekitModel):
         segest = list(h5["segset"])
         scores = np.array(h5["scores"])
         
-        #get Accuracy
+        # Get Accuracy
         accuracy = super().getAccuracy(modelset,
                                        segest,
                                        scores,
