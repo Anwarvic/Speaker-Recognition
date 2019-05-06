@@ -200,7 +200,7 @@ class UBM(SidekitModel):
 if __name__ == "__main__":
     conf_filename = "py3env/conf.yaml"
     ubm = UBM(conf_filename)
-    # ubm.train()
-    # ubm.evaluate()
-    # ubm.plotDETcurve()
+    ubm.train()
+    ubm.evaluate()
+    ubm.plotDETcurve()
     print( "Accuracy: {}%".format(ubm.getAccuracy()) )
