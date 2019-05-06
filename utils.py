@@ -31,7 +31,7 @@ def convert_wav(inpath, outpath, no_channels, sampling_rate, bit_precision,
                 showWarning=False):
     """
     Convert the waves to a pre-defined sampling rate, number of channels and
-    bit-precision using SoX tool. So, it should be installed
+    bit-precision using SoX tool. So, it should be installed!!
     """
     parent, _ = os.path.split(outpath)
     safe_makedir(parent)
@@ -48,10 +48,12 @@ def convert_wav(inpath, outpath, no_channels, sampling_rate, bit_precision,
                                                     stderr=subprocess.STDOUT)
 
 
-def parse_yaml(filepath):
+def parse_yaml(filepath="conf.yaml"):
     """
     This method parses the YAML configuration file and returns the parsed info
     as python dictionary.
+    Args:
+        filepath (string): relative path of the YAML configuration file
     """
     with open(filepath, 'r') as fin:
         try:
