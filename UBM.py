@@ -20,6 +20,17 @@ class UBM(SidekitModel):
 
 
     def train(self, SAVE=True):
+        """
+        This method is used to train our UBM model by doing the following:
+        - Create FeatureServe for the enroll features
+        - create use EM algorithm to train our UBM over the enroll features
+        - create StatServer to save trained parameters
+        - if Save arugment is True (which is by default), then it saves that
+          StatServer.
+        Args:
+            SAVE (boolean): if True, then it will save the StatServer. If False,
+               then the StatServer will be discarded.
+        """
         #SEE: https://projets-lium.univ-lemans.fr/sidekit/tutorial/ubmTraining.html
         train_list = os.listdir(os.path.join(self.BASE_DIR, "audio", "enroll"))
         for i in range(len(train_list)):
@@ -59,8 +70,8 @@ class UBM(SidekitModel):
                                          ubm=ubm)
         logging.debug(enroll_stat)
 
-        # Compute the sufficient statistics for a list of sessions whose indices are segIndices.
         server.feature_filename_structure = os.path.join(self.BASE_DIR, "feat", "{}.h5")
+        # Compute the sufficient statistics for a list of sessions whose indices are segIndices.
         #BUG: don't use self.NUM_THREADS when assgining num_thread as it's prune to race-conditioning
         enroll_stat.accumulate_stat(ubm=ubm,
                                     feature_server=server,
@@ -74,6 +85,17 @@ class UBM(SidekitModel):
 
 
     def evaluate(self, explain=True):
+        """
+        This method is used to evaluate the test set. It does so by"
+        - read the test_ndx file that contains the test set
+        - read the trained UBM model, and trained parameters (enroll_stat file)
+        - evaluate the test set using gmm_scoring and write the scores
+        - if explain=True, write the scores in a more readible way
+        Args:
+            explain (boolean): If True, write another text file that contain
+            the same information as the one within ubm_scores file but in a 
+            readible way.
+        """
         ############################# READING ############################
         # Create Feature server
         server = self.createFeatureServer()
@@ -83,14 +105,14 @@ class UBM(SidekitModel):
         ubm = sidekit.Mixture()
         model_name = "ubm_{}.h5".format(self.NUM_GAUSSIANS)
         ubm.read(os.path.join(self.BASE_DIR, "ubm", model_name))
-
-        ############################ Evaluating ###########################
         filename = "enroll_stat_{}.h5".format(self.NUM_GAUSSIANS)
         enroll_stat = sidekit.StatServer.read(os.path.join(self.BASE_DIR, "stat", filename))
         # MAP adaptation of enrollment speaker models
         enroll_sv = enroll_stat.adapt_mean_map_multisession(ubm=ubm,
                                                             r=3 # MAP regulation factor
                                                            )
+
+        ############################ Evaluating ###########################
         # Compute scores
         scores_gmm_ubm = sidekit.gmm_scoring(ubm=ubm,
                                              enroll=enroll_sv,
@@ -102,7 +124,7 @@ class UBM(SidekitModel):
         filename = "ubm_scores_{}.h5".format(self.NUM_GAUSSIANS)
         scores_gmm_ubm.write(os.path.join(self.BASE_DIR, "result", filename))
         
-        #write Analysis
+        # Explain the Analysis by writing more readible text file
         if explain:
             filename = "ubm_scores_{}_explained.txt".format(self.NUM_GAUSSIANS)
             fout = open(os.path.join(self.BASE_DIR, "result", filename), "a")
@@ -119,8 +141,11 @@ class UBM(SidekitModel):
             fout.close()
 
 
-
     def plotDETcurve(self):
+        """
+        This method is used to plot the DET (Detection Error Tradeoff) and 
+        save it on the disk.
+        """
         # Read test scores
         filename = "ubm_scores_{}.h5".format(self.NUM_GAUSSIANS)
         scores_dir = os.path.join(self.BASE_DIR, "result", filename)
@@ -143,11 +168,12 @@ class UBM(SidekitModel):
         dp.plot_DR30_both(idx=0) #dotted line for Doddington's Rule
         prior = sidekit.logit_effective_prior(0.001, 1, 1)
         dp.plot_mindcf_point(prior, idx=0) #minimum dcf point
+        # Save the graph
         graphname = "DET_GMM_UBM_{}.png".format(self.NUM_GAUSSIANS)
         dp.__figure__.savefig(os.path.join(self.BASE_DIR, "result", graphname))
 
 
-    def getAccuracy(self, result_mode):
+    def getAccuracy(self):
         """
         This function is used to get the accuracy of the model. 
         It reads the "test_scores_{}.h5" file that we got  using the 
@@ -156,9 +182,8 @@ class UBM(SidekitModel):
         distributions is 32, then the file read will be "test_scores_32.h5",
         This method should return the Accuracy of the model in percentage.
         """
-        assert result_mode in [0, 1, 2], "Accuracy mode must be either 0, 1 or 2!!"
         import h5py
-
+        # Load scores file
         filename = "ubm_scores_{}.h5".format(self.NUM_GAUSSIANS)
         filepath = os.path.join(self.BASE_DIR, "result", filename)
         h5 = h5py.File(filepath, mode="r")
@@ -166,10 +191,8 @@ class UBM(SidekitModel):
         segest = list(h5["segset"])
         scores = np.array(h5["scores"])
         
-        #get Accuracy
-        accuracy = super().getAccuracy( modelset, segest, scores,
-                                        mode=result_mode,
-                                        threshold=0)
+        # Get Accuracy
+        accuracy = super().getAccuracy( modelset, segest, scores, threshold=0)
         return accuracy
 
 
@@ -177,8 +200,7 @@ class UBM(SidekitModel):
 if __name__ == "__main__":
     conf_filename = "py3env/conf.yaml"
     ubm = UBM(conf_filename)
-    ubm.train()
-    ubm.evaluate()
-    ubm.plotDETcurve()
-    for mode in [1, 2]:
-        print( "Accuracy: {}%".format(ubm.getAccuracy(mode)*100) )
+    # ubm.train()
+    # ubm.evaluate()
+    # ubm.plotDETcurve()
+    print( "Accuracy: {}%".format(ubm.getAccuracy()) )
