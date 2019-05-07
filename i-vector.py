@@ -18,21 +18,29 @@ class IVector(SidekitModel):
     def __init__(self, conf_path):
         super().__init__(conf_path)
         # Set parameters of your system
-        self.NUM_GUASSIANS = self.conf['num_gaussians']  # number of Gaussian distributions for each GMM
+        self.NUM_GUASSIANS = self.conf['num_gaussians']
         self.BATCH_SIZE = self.conf['batch_size']
         self.TV_RANK = self.conf['tv_rank']
         self.TV_ITERATIONS = self.conf['tv_iterations']
-    
-    
+        self.ENABLE_PLDA = self.conf['enable_plda']
+
 
     def __create_stats(self):
-        # Read tv_idmap, and plda_idmap
+        """
+        This private method is used to create Statistic Servers.
+        TODO: post some more info
+        """
+        # Read tv_idmap
         tv_idmap = sidekit.IdMap.read(os.path.join(self.BASE_DIR, "task", "tv_idmap.h5"))
-        plda_idmap = sidekit.IdMap.read(os.path.join(self.BASE_DIR, "task", "plda_idmap.h5"))
-        # Create a joint StatServer for TV and PLDA training data
-        back_idmap = plda_idmap.merge(tv_idmap)
-        if not back_idmap.validate():
-            raise RuntimeError("Error merging tv_idmap & plda_idmap")
+        back_idmap = tv_idmap
+        # If PLDA is enabled
+        if self.ENABLE_PLDA:
+            # Read plda_idmap
+            plda_idmap = sidekit.IdMap.read(os.path.join(self.BASE_DIR, "task", "plda_idmap.h5"))
+            # Create a joint StatServer for TV and PLDA training data
+            back_idmap = plda_idmap.merge(tv_idmap)
+            if not back_idmap.validate():
+                raise RuntimeError("Error merging tv_idmap & plda_idmap")
         
         # Load UBM
         model_name = "ubm_{}.h5".format(self.NUM_GUASSIANS)
@@ -44,7 +52,7 @@ class IVector(SidekitModel):
         # Create Feature Server
         fs = self.createFeatureServer()
         
-        # Jointly compute the sufficient statistics of TV and PLDA data
+        # Jointly compute the sufficient statistics of TV and (if enabled) PLDA data
         back_filename = 'back_stat_{}.h5'.format(self.NUM_GUASSIANS)
         if not os.path.isfile(os.path.join(self.BASE_DIR, "stat", back_filename)):
             #BUG: don't use self.NUM_THREADS when assgining num_thread
@@ -60,16 +68,20 @@ class IVector(SidekitModel):
         tv_filename = 'tv_stat_{}.h5'.format(self.NUM_GUASSIANS)
         if not os.path.isfile(os.path.join(self.BASE_DIR, "stat", tv_filename)):
             tv_stat = sidekit.StatServer.read_subset(
-                os.path.join(self.BASE_DIR, "stat", back_filename),tv_idmap)
+                os.path.join(self.BASE_DIR, "stat", back_filename),
+                tv_idmap
+                )
             tv_stat.write(os.path.join(self.BASE_DIR, "stat", tv_filename))
         
         # Load sufficient statistics and extract i-vectors from PLDA training data
-        plda_filename = 'plda_stat_{}.h5'.format(self.NUM_GUASSIANS)
-        if not os.path.isfile(os.path.join(self.BASE_DIR, "stat", plda_filename)):
-            plda_stat = sidekit.StatServer.read_subset( os.path.join(self.BASE_DIR, "stat", back_filename),
-                                                        plda_idmap
-                                                    )
-            plda_stat.write(os.path.join(self.BASE_DIR, "stat", plda_filename))
+        if self.ENABLE_PLDA:
+            plda_filename = 'plda_stat_{}.h5'.format(self.NUM_GUASSIANS)
+            if not os.path.isfile(os.path.join(self.BASE_DIR, "stat", plda_filename)):
+                plda_stat = sidekit.StatServer.read_subset(
+                    os.path.join(self.BASE_DIR, "stat", back_filename),
+                    plda_idmap
+                    )
+                plda_stat.write(os.path.join(self.BASE_DIR, "stat", plda_filename))
         
         # Load sufficient statistics from test data
         filename = 'test_stat_{}.h5'.format(self.NUM_GUASSIANS)
@@ -208,11 +220,7 @@ class IVector(SidekitModel):
         scores = np.array(h5["scores"])
         
         # Get Accuracy
-        accuracy = super().getAccuracy(modelset,
-                                       segest,
-                                       scores,
-                                       mode=accuracy_mode,
-                                       threshold=0)
+        accuracy = super().getAccuracy(modelset, segest, scores, threshold=0)
         return accuracy
 
 
@@ -222,5 +230,4 @@ if __name__ == "__main__":
     iv = IVector(conf_path)
     iv.train_tv()
     iv.evaluate()
-    for mode in [1, 2]:
-        print( "Accuracy: {}%".format(iv.getAccuracy(mode)*100) )
+    print( "Accuracy: {}%".format(iv.getAccuracy()) )
