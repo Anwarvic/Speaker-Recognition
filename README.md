@@ -87,12 +87,76 @@ As we can see, the pipeline consists of six main steps:
 - **Training**: This step is pretty self-explanatory ... com'on.
 - **Evaluating**: This step is used to evaluate our model using a test set.
 
-Let's talk about each one of these in more details:
+All the configuration options for all previous steps can be found in a YAML file called `conf.yaml` which looks like this:
+
+```yaml
+#---! THIS FILE SHOULD BE MODIFIED BASED ON YOUR CASE
+
+#These variables should be changed
+inpath: /media/anwar/D/Data/ASR/Merged_Arabic_Corpus_of_Isolated_Words/original #where input wave data exist
+outpath: /media/anwar/E/Voice_Biometrics/SIDEKIT-1.3/py3env/exp/phase02 #where the program outputs exist
+
+
+#training configuration
+#NOTE: the summation of following sessions must be less than or equal 10
+enroll_sessions: 3 #number of sessions to be included in the training set
+test_sessions: 5   #number of sessions to be included in the test set
+
+
+#preprocessing configurations
+sampling_rate: 44100
+bit_precision: 16
+no_channels: 1
+
+
+#features configuration (NOTE: to disable a feature, assign it to None)
+features:
+  - vad #voice-activity-dectection
+  - energy #log-energy
+  - cep #cepstral coefficients
+  - fb #filter-banks
+  #- bnf
+cepstral_coefficients: 19
+filter_bank: log #filter bank can either be "log" for logarithmic and "lin" for linear
+filter_bank_size: 24
+lower_frequency: 300
+higher_frequency: 3400
+vad: snr #can be either "energy", "snr", "percentil" or "lbl".
+snr_ratio: 40 #signal-to-noise ratio 
+window_size: 0.025 #in seconds (25 milliseconds)
+window_shift: 0.010 #in seconds (10 milliseconds)
+
+
+#UBM configuration
+num_gaussians: 16
+
+
+#i-vectors (tv) configurations (depends on UBM configurations)
+batch_size: 30 #size of data batch
+tv_rank: 25 # Rank of the total variability matrix
+tv_iterations: 50 # number of iterations to train the variability matrix
+
+#i-vectors (PLDA) configurations (depends on TV configuration)
+enable_plda: False
+scoring: cosine #can be either "cosine", or "mahalanobis", or "two_covariance"
+
+
+
+
+#plotting configuration
+DET_curve: rocch #you can choose either 'rocch' or 'steppy'
+
+
+#other configuration
+
+```
+
+Now, let's talk about each one of these in more details:
 
 ### 1. Preprocessing
-The file responsible for data pre-processing is `data_init.py` in which I split the whole data into two groups (one for training -enroll- and the other for testing) beside doing some preprocessing over the wav files, to match the case that I'm creating this model for, like: 
+The file responsible for data pre-processing is `data_init.py` in which I split the whole data into two groups (one for training -enroll- and the other for testing) beside doing some preprocessing over the WAV files, to match the case that I'm creating this model for, like: 
 
-- Setting the sample rate to 16000.
+- Setting the sample rate to 44100.
 - Setting the number of channels to one (mono).
 - Setting the precision to 16-bit.
 
