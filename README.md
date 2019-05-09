@@ -21,12 +21,12 @@ To run SIDEKIT on your machine, you need to:
 - Install tkinter by running `sudo apt-get install python3.6-tk`.
 - Install libSVM by running `sudo apt-get install libsvm-dev`. This library dedicated to SVM classifiers.
 
-**NOTE**:
+**IMPORTANT NOTE**:
 
-Three is no need to install SIDEKIT as the library isn't stable and requires some manuevering so I cloned the project from gitLab using`git clone https://git-lium.univ-lemans.fr/Larcher/sidekit.git` and did some editing. So, you just need to clone my project and you are ready to go!!
+There is no need to install SIDEKIT as the library isn't stable and requires some manuevering so I cloned the project from gitLab using`git clone https://git-lium.univ-lemans.fr/Larcher/sidekit.git` and did some editing. So, you just need to clone my project and you are ready to go!!
 
 ## Download Dataset
-This project is just a proof-of-concept, so it was built using the merged vesion of a small open-source dataset called the "Arabic Corpus of Isolated Words" made by the [University of Stirling](http://www.cs.stir.ac.uk/) located in the Central Belt of Scotland. This dataset can be downloaded from the official website right [here](https://www.kaggle.com/mohamedanwarvic/merged-arabic-corpus-of-isolated-words). 
+This project is just a proof-of-concept, so it was built using the merged vesion of a small open-source dataset called the "Arabic Corpus of Isolated Words" made by the [University of Stirling](http://www.cs.stir.ac.uk/) located in the Central Belt of Scotland. This dataset can be downloaded from [here](https://www.kaggle.com/mohamedanwarvic/merged-arabic-corpus-of-isolated-words). 
 
 This dataset is a voice-recorded dataset of 50 Native-Arabic speakers saying 20 words about 10 times. It has been recorded with a 44100 Hz sampling rate and 16-bit resolution. This dataset can be used for tasks Speaker Recognition, Speaker Verification, Voice biometrics, ... etc.
 
@@ -81,88 +81,27 @@ As we can see, the pipeline consists of six main steps:
 - **Feature Extraction**: In this step, we extract pre-defind features from the wav files.
 - **Choosing A Model**: In this step, we choose a certain model, out of four, to be trained. We have five models that can be trained:
 	- UBM
-	- SVM with GMM
+	- SVM with GMM (NOT READY YET)
 	- I-vector
-	- Deep Learning
+	- Deep Learning (NOT READY YET)
 - **Training**: This step is pretty self-explanatory ... com'on.
 - **Evaluating**: This step is used to evaluate our model using a test set.
 
-All the configuration options for all previous steps can be found in a YAML file called `conf.yaml` which looks like this:
+All the configuration options for all previous steps can be found in a YAML file called `conf.yaml`. We will discuss most of these configurations, each at its associated section.
 
-```yaml
-#---! THIS FILE SHOULD BE MODIFIED BASED ON YOUR CASE
-
-#These variables should be changed
-inpath: /media/anwar/D/Data/ASR/Merged_Arabic_Corpus_of_Isolated_Words/original #where input wave data exist
-outpath: /media/anwar/E/Voice_Biometrics/SIDEKIT-1.3/py3env/exp/phase02 #where the program outputs exist
-
-
-#training configuration
-#NOTE: the summation of following sessions must be less than or equal 10
-enroll_sessions: 3 #number of sessions to be included in the training set
-test_sessions: 5   #number of sessions to be included in the test set
-
-
-#preprocessing configurations
-sampling_rate: 44100
-bit_precision: 16
-no_channels: 1
-
-
-#features configuration (NOTE: to disable a feature, assign it to None)
-features:
-  - vad #voice-activity-dectection
-  - energy #log-energy
-  - cep #cepstral coefficients
-  - fb #filter-banks
-  #- bnf
-cepstral_coefficients: 19
-filter_bank: log #filter bank can either be "log" for logarithmic and "lin" for linear
-filter_bank_size: 24
-lower_frequency: 300
-higher_frequency: 3400
-vad: snr #can be either "energy", "snr", "percentil" or "lbl".
-snr_ratio: 40 #signal-to-noise ratio 
-window_size: 0.025 #in seconds (25 milliseconds)
-window_shift: 0.010 #in seconds (10 milliseconds)
-
-
-#UBM configuration
-num_gaussians: 16
-
-
-#i-vectors (tv) configurations (depends on UBM configurations)
-batch_size: 30 #size of data batch
-tv_rank: 25 # Rank of the total variability matrix
-tv_iterations: 50 # number of iterations to train the variability matrix
-
-#i-vectors (PLDA) configurations (depends on TV configuration)
-enable_plda: False
-scoring: cosine #can be either "cosine", or "mahalanobis", or "two_covariance"
-
-
-
-
-#plotting configuration
-DET_curve: rocch #you can choose either 'rocch' or 'steppy'
-
-
-#other configuration
-
-```
-
-Now, let's talk about each one of these in more details:
+Now, let's talk about each one of these processes in more details:
 
 ### 1. Preprocessing
-The file responsible for data pre-processing is `data_init.py` in which I split the whole data into two groups (one for training -enroll- and the other for testing) beside doing some preprocessing over the WAV files, to match the case that I'm creating this model for, like: 
+The file responsible for data pre-processing is `data_init.py` in which I split the whole data into two groups (one for training -enroll- and the other for testing). Then doing some preprocessing over the two sets to match the case that I'm creating this model for, like: 
 
 - Setting the sample rate to 44100.
 - Setting the number of channels to one (mono).
 - Setting the precision to 16-bit.
 
-In this file, you can modify only these Global Variables:
+In the configuration file `conf.yaml`, you can modify only these:
 
-- `EXCLUDED_IDS`: which includes the speaker you want to exclude from the whole data. In my case, I was working on only males, so I excluded these speakers `11`, `36` and `44`.
+- `inpath`: the absolute path of the directory where the audio data exist.
+- `outpath`: the absolute path of the directory where the audio data exist.
 - `EXCLUDED_WORDS`: which contains the word's ID you want to exclude.
 - `ENROLL_NUM`: which are the number of speakers to be included in the training (enroll).
 - `TEST_NUM`: which are the number of speakers to be included in the test outside the enroll. I set the `ENROLL_NUM=10` and `TEST_NUM=5` which means that the training will be done on just 10 speakers and the test will be done using 15 speakers.
