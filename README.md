@@ -101,28 +101,16 @@ The file responsible for data pre-processing is `data_init.py` in which I split 
 In the configuration file `conf.yaml`, you can modify only these:
 
 - `inpath`: the absolute path of the directory where the audio data exist.
-- `outpath`: the absolute path of the directory where the audio data exist.
-- `EXCLUDED_WORDS`: which contains the word's ID you want to exclude.
-- `ENROLL_NUM`: which are the number of speakers to be included in the training (enroll).
-- `TEST_NUM`: which are the number of speakers to be included in the test outside the enroll. I set the `ENROLL_NUM=10` and `TEST_NUM=5` which means that the training will be done on just 10 speakers and the test will be done using 15 speakers.
+- `outpath`: the absolute path of the directory where the output of running the model shoudl be. I recommend putting them in a standalone directory `exp`.
+- `enroll_sessions`: the number of sessions to be included in the training (enroll).
+- `test_sessions`: the number of sessions to be included in the test . I set the `enroll_sessions=3` and `test_sessions=5` knwoing that there are a total of 10 sessions in the data.
 - `ENROLL_REPS`: which determines how many repetition a word will be repeated in the training. Three is pretty realistic.
-`TEST_REPS`: it determines how many repetitions will be tested over a single word.
-
-And you need also to set these two variables:
-
-- `INDIR`: which is the abolute path to the location of the downloaded data.
-- `OUTDIR`: which is the absolute path to the location where your project is located.
-
-After running this file, a directory named `audio` will be created where three sub-directories will be found. These three sub-directories are `data` which contains the whole data preprocessed, `enroll` which contains only the enrolled data for trainined, and `test` which contains the data for testing.
-
-**Note:**
-
-- The number of files inside `data` should equal `47 * 20 * 10 = 9400` where `47` is the total number of speakers minus the excluded ones, `20` is the total number of words, and `10` is the total number of repetition of a single word. 
-- The number of files inside `enroll` should equal `ENROLL_NUM * number of used words * ENROLL_REPS`. In my case, they are `10 * 20 * 3 = 600`.
-- The number of files inside `test` should equal `(TEST_NUM+ENROLL_NUM) * number of used words * TEST_REPS`. In my case, they are `15 * 20 * 7 = 2100`.
+- `sampling_rate`: the sampling rate of the audio files after preprocessing.
+- `bit_precision`: the bit-precision of the audio files after preprocessing.
+- `no_channels`: the number of channels of the audio files after preprocessing, (1 for mono, and 2 for stereo).
 
 ### 2. Feature Extraction
-The file responsible for the feature extraction is `extract_features.py` in which I extract features from the audio files and the extracted features will be located at a new folder called `feat` at the project directory. Note that this file needs the data to be located at `audio` directory and it also needs the enroll/training data to be at `audio/enroll` and the test data to be at `audio/test`.
+The file responsible for the feature extraction is also `data_init.py` in which I extract features from the preprocessed audio files and save them into a new folder called `feat` at the `outpath` directory. Note that this file needs the data to be located at `audio` directory and it also needs the enroll/training data to be at `audio/enroll` and the test data to be at `audio/test`.
 
 To be able to use this file, you need to set these member variables:
 
