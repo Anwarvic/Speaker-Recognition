@@ -109,6 +109,8 @@ In the configuration file `conf.yaml`, you can modify only these:
 - `bit_precision`: the bit-precision of the audio files after preprocessing.
 - `no_channels`: the number of channels of the audio files after preprocessing, (1 for mono, and 2 for stereo).
 
+The output from this step can be found at `audio` directory inside the `outpath` directory defined in the configuration file.
+
 ### 2. Feature Extraction
 The file responsible for the feature extraction is also `data_init.py` in which I extract features from the preprocessed audio files and save them into a new folder called `feat` at the `outpath` directory. Note that this file needs the data to be located at `audio` directory and it also needs the enroll/training data to be at `audio/enroll` and the test data to be at `audio/test`.
 
