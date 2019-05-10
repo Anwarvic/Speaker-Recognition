@@ -83,7 +83,6 @@ class UBM(SidekitModel):
             enroll_stat.write(os.path.join(self.BASE_DIR, "stat", filename))
 
 
-
     def evaluate(self, explain=True):
         """
         This method is used to evaluate the test set. It does so by"
