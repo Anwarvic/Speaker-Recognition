@@ -112,22 +112,20 @@ In the configuration file `conf.yaml`, you can modify only these:
 The output from this step can be found at `audio` directory inside the `outpath` directory defined in the configuration file.
 
 ### 2. Feature Extraction
-The file responsible for the feature extraction is also `data_init.py` in which I extract features from the preprocessed audio files and save them into a new folder called `feat` at the `outpath` directory. Note that this file needs the data to be located at `audio` directory and it also needs the enroll/training data to be at `audio/enroll` and the test data to be at `audio/test`.
+The file responsible for the feature extraction is also `data_init.py` in which I extract features from the preprocessed audio files and save them into a new folder called `feat` at the `outpath` directory.
 
-To be able to use this file, you need to set these member variables:
+This process uses the following configuration in `conf.yaml`:
 
-- `BASE_DIR`: it's the absolute path to the project's directory.
-- `NUM_THREADS`: the number of threads to be running in parallel
-- `FEAUTRES`: it is a list of features that will to be extracted from the audio files. The list of features I used are These features are `fb`: Filter Banks, `cep`: Cepstral Coefficients, `eneregy` and `vad`: Voice Activity Detection. If you chose `vad` within the least of features, you need to set the alogrithm that will be used between either `snr` or `energy`. I chose `snr`: Signal-to-Noise Ratio.
-- `FILTER_BANK`: The type of filter-banknig used. It can be either `log` or `lin`:linear.
-- `FILTER_BANK_SIZE`: Size of the filter bank.
-- `LOWER_FREQUENCY`: the lower frequency (in Hz) of the filter bank.
-- `HIGHER_FREQUENCY`: the higher frequency (in Hz) of the filter bank.
-- `VAD`: The Voice Activity Detection algorithm used.
-- `SNR_RATIO`: The ratio of the SNR algortihm (in db).
-- `WINDOW_SIZE`: the size of the window for cep features.
-- `WINDOW_SHIFT`: The step that the window is moving (in sec).
-- `CEPS_NUMBER`: the size of the cep vector.
+- `features`: the list of features to be extracted. The list of features I used are These features are `fb`: Filter Banks, `cep`: Cepstral Coefficients, `eneregy` and `vad`: Voice Activity Detection. If you chose `vad` within the least of features, you need to set the alogrithm that will be used between either `snr` or `energy`. I chose `snr`: Signal-to-Noise Ratio. If you don't want to include anyone of them, just comment the line that contains the feature.
+- `cepstral_coefficients`: the number of cepstral coeffiecients to be used when applyig MFCC.
+- `filter_bank`: The type of filter-banknig used. It can be either `log`: logarithmic or `lin`:linear.
+- `filter_bank_size`: Size of the filter bank.
+- `lower_frequency`: the lower frequency (in Hz) of the filter bank.
+- `higher_frequency`: the higher frequency (in Hz) of the filter bank.
+- `vad`: The Voice Activity Detection algorithm used. It can be either "energy", "snr", "percentil" or "lbl".
+- `snr_ratio`: The Signal-to-Noise ratio of the SNR algortihm (in db). It's useful only if "snr" is chosen as a vad algorithm.
+- `window_size`: the size of the window for cep features.
+- `window_shift`: The step that the window is moving (in sec).
 
 There is also a method called `reviewMemberVariables` that resets these member varibales back to `None` based on the `FEATURES` used in your model.
 
