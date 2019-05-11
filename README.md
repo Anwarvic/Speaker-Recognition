@@ -71,7 +71,7 @@ second_wav_words = {
 The sideKit pipeline consists of six steps as shown in the following image:
 
 <p align="center">
-<img src="http://www.mediafire.com/convkey/cc16/r56t49ybirn455izg.jpg" /> 
+<img src="http://www.mediafire.com/convkey/265c/r56t49ybirn455izg.jpg" /> 
 </p>
 
 As we can see, the pipeline consists of six main steps:
@@ -111,7 +111,10 @@ In the configuration file `conf.yaml`, you can modify only these:
 
 The output from this step can be found at `audio` directory inside the `outpath` directory defined in the configuration file.
 
-### 2. Feature Extraction
+### 2. Structure
+The file responsible for the fea
+
+### 3. Feature Extraction
 The file responsible for the feature extraction is also `data_init.py` in which I extract features from the preprocessed audio files and save them into a new folder called `feat` at the `outpath` directory.
 
 This process uses the following configuration in `conf.yaml`:
@@ -127,11 +130,11 @@ This process uses the following configuration in `conf.yaml`:
 - `window_size`: the size of the window for cep features.
 - `window_shift`: The step that the window is moving (in sec).
 
-There is also a method called `reviewMemberVariables` that resets these member varibales back to `None` based on the `FEATURES` used in your model.
+There is also a method called `reviewMemberVariables` that resets these member varibales back to `None` based on the `features` used in the configuration file.
 
-You can download the features used in my model from [here](http://www.mediafire.com/file/03o7i80o7a2taza/feat.zip/file). After downloading, you should extract them in the projects directory.
+You can download the features used in my model from [here](http://www.mediafire.com/file/03o7i80o7a2taza/feat.zip/file). After downloading, you should extract them at directory defined as the `inpath` yaml variable.
 
-### 3. Structure
+### 4. Choosing Model
 
 
 
