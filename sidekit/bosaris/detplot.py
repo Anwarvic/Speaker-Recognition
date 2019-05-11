@@ -111,7 +111,8 @@ def effective_prior(Ptar, cmiss, cfa):
 
 
 def logit_effective_prior(Ptar, cmiss, cfa):
-    """This function adjusts a given prior probability of target p_targ,
+    """
+    This function adjusts a given prior probability of target p_targ,
     to incorporate the effects of a cost of miss,
     cmiss, and a cost of false-alarm, cfa.
     In particular note:
