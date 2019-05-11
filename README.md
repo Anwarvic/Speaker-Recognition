@@ -132,7 +132,7 @@ This process uses the following configuration in `conf.yaml`:
 
 There is also a method called `reviewMemberVariables` that resets these member varibales back to `None` based on the `features` used in the configuration file.
 
-You can download the features used in my model from [here](http://www.mediafire.com/file/03o7i80o7a2taza/feat.zip/file). After downloading, you should extract them at directory defined as the `inpath` yaml variable.
+You can download the features used in my model from [here](). After downloading, you should extract them at directory defined as the `inpath` yaml variable.
 
 ### 4. Choosing Model
 
