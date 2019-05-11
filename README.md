@@ -132,9 +132,18 @@ This process uses the following configuration in `conf.yaml`:
 
 There is also a method called `reviewMemberVariables` that resets these member varibales back to `None` based on the `features` used in the configuration file.
 
-You can download the features used in my model from [here](). After downloading, you should extract them at directory defined as the `inpath` yaml variable.
+You can download the features used in my model from [here](http://www.mediafire.com/file/03o7i80o7a2taza/feat.zip/file). After downloading, you should extract them at directory defined as the `inpath` yaml variable.
 
 ### 4. Choosing Model
+Here, are different models that we can train in Sidekit. I haven't implements all the models inside Sidekit, but the following are the ready ones:
+
+- UBM: This is a Universal Background Model. You can modify the `num_gaussians` option in the configuraion file.
+- i-vector: This is an Identity Vector model. You can modify these configurations:
+	- `batch_size`: the size of batch used for training i-vectors.
+	- `tv_rank`: the rank (size) of the Total Variability matrix.
+	- `tv_iterations`: number of iterations to train Total Variability matrix (>20).
+	- `enable_plda`: use PLDA with training or not
+	- `scoring`: the scoring metric used for this model. It can be either "cosine", "mahalanobis", or "two_covariance".
 
 
 
