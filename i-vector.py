@@ -10,6 +10,7 @@ import logging
 logging.basicConfig(level=logging.INFO)
 
 from model_interface import SidekitModel
+from ubm import UBM
 
 
 class IVector(SidekitModel):
@@ -18,6 +19,7 @@ class IVector(SidekitModel):
     def __init__(self, conf_path):
         super().__init__(conf_path)
         # Set parameters of your system
+        self.conf_path = conf_path
         self.NUM_GUASSIANS = self.conf['num_gaussians']
         self.BATCH_SIZE = self.conf['batch_size']
         self.TV_RANK = self.conf['tv_rank']
@@ -42,10 +44,18 @@ class IVector(SidekitModel):
             if not back_idmap.validate():
                 raise RuntimeError("Error merging tv_idmap & plda_idmap")
         
-        # Load UBM
+        # Check UBM model
         model_name = "ubm_{}.h5".format(self.NUM_GUASSIANS)
+        model_path = os.path.join(self.BASE_DIR, "ubm", model_name)
+        if not os.path.exists(model_path):
+            #if UBM model does not exist, train one
+            logging.info("Training UBM-{} model".format(self.NUM_GUASSIANS))
+            ubm = UBM(self.conf_path)
+            ubm.train()
+        #load trained UBM model
+        logging.info("Loading trained UBM-{} model".format(self.NUM_GUASSIANS))
         ubm = sidekit.Mixture()
-        ubm.read(os.path.join(self.BASE_DIR, "ubm", model_name))
+        ubm.read(model_path)
         back_stat = sidekit.StatServer( statserver_file_name=back_idmap, 
                                         ubm=ubm
                                       )
@@ -89,12 +99,12 @@ class IVector(SidekitModel):
             test_idmap = sidekit.IdMap.read(os.path.join(self.BASE_DIR, "task", "test_idmap.h5"))
             test_stat = sidekit.StatServer( statserver_file_name=test_idmap, 
                                             ubm=ubm
-                                        )
+                                          )
             # Create Feature Server
             fs = self.createFeatureServer()
             # Jointly compute the sufficient statistics of TV and PLDA data
             #BUG: don't use self.NUM_THREADS when assgining num_thread as it's prune to race-conditioning
-            test_stat.accumulate_stat( ubm=ubm,
+            test_stat.accumulate_stat(ubm=ubm,
                                     feature_server=fs,
                                     seg_indices=range(test_stat.segset.shape[0])
                                     )
