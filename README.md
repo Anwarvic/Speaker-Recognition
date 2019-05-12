@@ -112,12 +112,17 @@ In the configuration file `conf.yaml`, you can modify only these:
 The output from this step can be found at `audio` directory inside the `outpath` directory defined in the configuration file.
 
 ### 2. Structure
-The file responsible for the fea
+This step is done in the `data_init.py` script as well. By structuring, I mean create index files and idmap files for Sidekit to use. Basically, we need to create three files at least:
+
+- `enroll_idmap.h5`: HDF5 file that maps the enroll acoustic features to speakers.
+- `test_trails.txt`: text file that enumerates the trials that we need to evaluate our model upon.
+- `test_ndx.h5`: HDF5 file that saves the index of test files and their speakers generated from `test_trials.txt`.
+
 
 ### 3. Feature Extraction
-The file responsible for the feature extraction is also `data_init.py` in which I extract features from the preprocessed audio files and save them into a new folder called `feat` at the `outpath` directory.
+The file responsible for the feature extraction is `extract_features.py` in which I extract features from the preprocessed audio files and save them into a new folder called `feat` at the directory represented by `outpath` yaml variable.
 
-This process uses the following configuration in `conf.yaml`:
+This process uses the following yaml variables inside `conf.yaml`:
 
 - `features`: the list of features to be extracted. The list of features I used are These features are `fb`: Filter Banks, `cep`: Cepstral Coefficients, `eneregy` and `vad`: Voice Activity Detection. If you chose `vad` within the least of features, you need to set the alogrithm that will be used between either `snr` or `energy`. I chose `snr`: Signal-to-Noise Ratio. If you don't want to include anyone of them, just comment the line that contains the feature.
 - `cepstral_coefficients`: the number of cepstral coeffiecients to be used when applyig MFCC.
@@ -130,12 +135,12 @@ This process uses the following configuration in `conf.yaml`:
 - `window_size`: the size of the window for cep features.
 - `window_shift`: The step that the window is moving (in sec).
 
-There is also a method called `reviewMemberVariables` that resets these member varibales back to `None` based on the `features` used in the configuration file.
+There is also a method called `review_member_variables` that resets these member varibales back to `None` based on the `features` used in the configuration file.
 
-You can download the features used in my model from [here](http://www.mediafire.com/file/03o7i80o7a2taza/feat.zip/file). After downloading, you should extract them at directory defined as the `inpath` yaml variable.
+You can download the features used in my model from [here](http://www.mediafire.com/file/03o7i80o7a2taza/feat.zip/file). After downloading, you should extract them at directory defined as the `inpath` YAML variable.
 
 ### 4. Choosing Model
-Here, are different models that we can train in Sidekit. I haven't implements all the models inside Sidekit, but the following are the ready ones:
+In Sidekit, there are different models that we can train. I haven't been able to implement all the models, but the following are the ready ones:
 
 - UBM: This is a Universal Background Model. You can modify the `num_gaussians` option in the configuraion file.
 - i-vector: This is an Identity Vector model. You can modify these configurations:
@@ -143,11 +148,11 @@ Here, are different models that we can train in Sidekit. I haven't implements al
 	- `tv_rank`: the rank (size) of the Total Variability matrix.
 	- `tv_iterations`: number of iterations to train Total Variability matrix (>20).
 	- `enable_plda`: use PLDA with training or not
-	- `scoring`: the scoring metric used for this model. It can be either "cosine", "mahalanobis", or "two_covariance".
+	- `scoring`: the scoring metric used for this model. It can be either "cosine", "mahalanobis", or "two_covariance". The only one working for now is "cosine".
 
 
-
-
+### 5. Train
+Now, we have everything ready for training our chosen model. See, we have preprocessed the input data, split them into train (enroll) and test, extracted features, chose the prefered model and its configuration. Now, we are ready to train this model. Each model has a script to train that model. If you chose UBM, then run `ubm.py` file. If you chose ivector, then run `i-vector.py`.
 
 
 
