@@ -109,7 +109,7 @@ In the configuration file `conf.yaml`, you can modify only these:
 - `bit_precision`: the bit-precision of the audio files after preprocessing.
 - `no_channels`: the number of channels of the audio files after preprocessing, (1 for mono, and 2 for stereo).
 
-The output from this step can be found at `audio` directory inside the `outpath` directory defined in the configuration file.
+The output from this step can be found at `audio` directory inside the `outpath` directory defined in the configuration file as YAML variable.
 
 ### 2. Structure
 This step is done in the `data_init.py` script as well. By structuring, I mean create index files and idmap files for Sidekit to use. Basically, we need to create three files at least:
@@ -118,6 +118,7 @@ This step is done in the `data_init.py` script as well. By structuring, I mean c
 - `test_trails.txt`: text file that enumerates the trials that we need to evaluate our model upon.
 - `test_ndx.h5`: HDF5 file that saves the index of test files and their speakers generated from `test_trials.txt`.
 
+The output of this step can be found at `task` directory inside the `outpath` directory defined in the configuration file as YAML variable.
 
 ### 3. Feature Extraction
 The file responsible for the feature extraction is `extract_features.py` in which I extract features from the preprocessed audio files and save them into a new folder called `feat` at the directory represented by `outpath` yaml variable.
@@ -137,6 +138,8 @@ This process uses the following yaml variables inside `conf.yaml`:
 
 There is also a method called `review_member_variables` that resets these member varibales back to `None` based on the `features` used in the configuration file.
 
+The output of this step can be found at `feat` directory inside the `outpath` directory defined in the configuration file as YAML variable.
+
 You can download the features used in my model from [here](http://www.mediafire.com/file/03o7i80o7a2taza/feat.zip/file). After downloading, you should extract them at directory defined as the `inpath` YAML variable.
 
 ### 4. Choosing Model
@@ -155,7 +158,7 @@ In Sidekit, there are different models that we can train. I haven't been able to
 Now, we have everything ready for training our chosen model. See, we have preprocessed the input data, split them into train (enroll) and test, extracted features, chose the prefered model and its configuration. Now, we are ready to train this model. Each model has a script to train that model. If you chose UBM, then run `ubm.py` file. If you chose ivector, then run `i-vector.py`.
 
 
-
-
+### 5. Evaluate
+By evaluate the mode, I mean get the accuracy over the test set and drawing DET graph. This step is done in the model's script
 
 TO BE CONTINUED :)
