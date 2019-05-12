@@ -94,7 +94,7 @@ Now, let's talk about each one of these processes in more details:
 ### 1. Preprocessing
 The file responsible for data pre-processing is `data_init.py` in which I split the whole data into two groups (one for training -enroll- and the other for testing). Then doing some preprocessing over the two sets to match the case that I'm creating this model for, like: 
 
-- Setting the sample rate to 44100.
+- Setting the sample rate to 16000.
 - Setting the number of channels to one (mono).
 - Setting the precision to 16-bit.
 
@@ -140,7 +140,7 @@ There is also a method called `review_member_variables` that resets these member
 
 The output of this step can be found at `feat` directory inside the `outpath` directory defined in the configuration file as YAML variable.
 
-You can download the features used in my model from [here](http://www.mediafire.com/file/03o7i80o7a2taza/feat.zip/file). After downloading, you should extract them at directory defined as the `inpath` YAML variable.
+You can download the features used in my model from [here](http://www.mediafire.com/file/03o7i80o7a2taza/feat.zip/file) (32MB). After downloading, you should extract them at directory defined as the `outpath` YAML variable.
 
 ### 4. Choosing Model
 In Sidekit, there are different models that we can train. I haven't been able to implement all the models, but the following are the ready ones:
