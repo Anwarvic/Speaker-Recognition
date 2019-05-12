@@ -20,7 +20,7 @@ class IVector(SidekitModel):
         super().__init__(conf_path)
         # Set parameters of your system
         self.conf_path = conf_path
-        self.NUM_GUASSIANS = self.conf['num_gaussians']
+        self.NUM_GAUSSIANS = self.conf['num_gaussians']
         self.BATCH_SIZE = self.conf['batch_size']
         self.TV_RANK = self.conf['tv_rank']
         self.TV_ITERATIONS = self.conf['tv_iterations']
@@ -45,17 +45,17 @@ class IVector(SidekitModel):
                 raise RuntimeError("Error merging tv_idmap & plda_idmap")
         
         # Check UBM model
-        model_name = "ubm_{}.h5".format(self.NUM_GUASSIANS)
-        model_path = os.path.join(self.BASE_DIR, "ubm", model_name)
-        if not os.path.exists(model_path):
+        ubm_name = "ubm_{}.h5".format(self.NUM_GAUSSIANS)
+        ubm_path = os.path.join(self.BASE_DIR, "ubm", ubm_name)
+        if not os.path.exists(ubm_path):
             #if UBM model does not exist, train one
-            logging.info("Training UBM-{} model".format(self.NUM_GUASSIANS))
+            logging.info("Training UBM-{} model".format(self.NUM_GAUSSIANS))
             ubm = UBM(self.conf_path)
             ubm.train()
         #load trained UBM model
-        logging.info("Loading trained UBM-{} model".format(self.NUM_GUASSIANS))
+        logging.info("Loading trained UBM-{} model".format(self.NUM_GAUSSIANS))
         ubm = sidekit.Mixture()
-        ubm.read(model_path)
+        ubm.read(ubm_path)
         back_stat = sidekit.StatServer( statserver_file_name=back_idmap, 
                                         ubm=ubm
                                       )
@@ -63,7 +63,7 @@ class IVector(SidekitModel):
         fs = self.createFeatureServer()
         
         # Jointly compute the sufficient statistics of TV and (if enabled) PLDA data
-        back_filename = 'back_stat_{}.h5'.format(self.NUM_GUASSIANS)
+        back_filename = 'back_stat_{}.h5'.format(self.NUM_GAUSSIANS)
         if not os.path.isfile(os.path.join(self.BASE_DIR, "stat", back_filename)):
             #BUG: don't use self.NUM_THREADS when assgining num_thread
             # as it's prune to race-conditioning
@@ -75,7 +75,7 @@ class IVector(SidekitModel):
             back_stat.write(os.path.join(self.BASE_DIR, "stat", back_filename))
         
         # Load the sufficient statistics from TV training data
-        tv_filename = 'tv_stat_{}.h5'.format(self.NUM_GUASSIANS)
+        tv_filename = 'tv_stat_{}.h5'.format(self.NUM_GAUSSIANS)
         if not os.path.isfile(os.path.join(self.BASE_DIR, "stat", tv_filename)):
             tv_stat = sidekit.StatServer.read_subset(
                 os.path.join(self.BASE_DIR, "stat", back_filename),
@@ -85,7 +85,7 @@ class IVector(SidekitModel):
         
         # Load sufficient statistics and extract i-vectors from PLDA training data
         if self.ENABLE_PLDA:
-            plda_filename = 'plda_stat_{}.h5'.format(self.NUM_GUASSIANS)
+            plda_filename = 'plda_stat_{}.h5'.format(self.NUM_GAUSSIANS)
             if not os.path.isfile(os.path.join(self.BASE_DIR, "stat", plda_filename)):
                 plda_stat = sidekit.StatServer.read_subset(
                     os.path.join(self.BASE_DIR, "stat", back_filename),
@@ -94,7 +94,7 @@ class IVector(SidekitModel):
                 plda_stat.write(os.path.join(self.BASE_DIR, "stat", plda_filename))
         
         # Load sufficient statistics from test data
-        filename = 'test_stat_{}.h5'.format(self.NUM_GUASSIANS)
+        filename = 'test_stat_{}.h5'.format(self.NUM_GAUSSIANS)
         if not os.path.isfile(os.path.join(self.BASE_DIR, "stat", filename)):
             test_idmap = sidekit.IdMap.read(os.path.join(self.BASE_DIR, "task", "test_idmap.h5"))
             test_stat = sidekit.StatServer( statserver_file_name=test_idmap, 
@@ -121,14 +121,14 @@ class IVector(SidekitModel):
         self.__create_stats()
 
         # Load UBM model
-        model_name = "ubm_{}.h5".format(self.NUM_GUASSIANS)
+        model_name = "ubm_{}.h5".format(self.NUM_GAUSSIANS)
         ubm = sidekit.Mixture()
         ubm.read(os.path.join(self.BASE_DIR, "ubm", model_name))
 
         # Train TV matrix using FactorAnalyser
-        filename = "tv_matrix_{}".format(self.NUM_GUASSIANS)
+        filename = "tv_matrix_{}".format(self.NUM_GAUSSIANS)
         outputPath = os.path.join(self.BASE_DIR, "ivector", filename)
-        tv_filename = 'tv_stat_{}.h5'.format(self.NUM_GUASSIANS)
+        tv_filename = 'tv_stat_{}.h5'.format(self.NUM_GAUSSIANS)
         fa = sidekit.FactorAnalyser()
         fa.total_variability_single(os.path.join(self.BASE_DIR, "stat", tv_filename),
                                     ubm,
@@ -145,7 +145,7 @@ class IVector(SidekitModel):
         # tv_sigma = fa.Sigma # Residual covariance matrix
 
         # Clear files produced at each iteration
-        filename_regex = "tv_matrix_{}_it-*.h5".format(self.NUM_GUASSIANS)
+        filename_regex = "tv_matrix_{}_it-*.h5".format(self.NUM_GAUSSIANS)
         lst = glob(os.path.join(self.BASE_DIR, "ivector", filename_regex))
         for f in lst:
             os.remove(f)
@@ -156,18 +156,18 @@ class IVector(SidekitModel):
         This method is used to score our trained model. 
         """
         # Load UBM model
-        model_name = "ubm_{}.h5".format(self.NUM_GUASSIANS)
+        model_name = "ubm_{}.h5".format(self.NUM_GAUSSIANS)
         ubm = sidekit.Mixture()
         ubm.read(os.path.join(self.BASE_DIR, "ubm", model_name))
 
         # Load TV matrix
-        filename = "tv_matrix_{}".format(self.NUM_GUASSIANS)
+        filename = "tv_matrix_{}".format(self.NUM_GAUSSIANS)
         outputPath = os.path.join(self.BASE_DIR, "ivector", filename)
         fa = sidekit.FactorAnalyser(outputPath+".h5")
 
         # Extract i-vectors from enrollment data
         logging.info("Extracting i-vectors from enrollment data")
-        filename = 'enroll_stat_{}.h5'.format(self.NUM_GUASSIANS)
+        filename = 'enroll_stat_{}.h5'.format(self.NUM_GAUSSIANS)
         enroll_stat = sidekit.StatServer.read(os.path.join(self.BASE_DIR, 'stat', filename))
         enroll_iv = fa.extract_ivectors_single( ubm=ubm,
                                                 stat_server=enroll_stat,
@@ -176,7 +176,7 @@ class IVector(SidekitModel):
     
         # Extract i-vectors from test data
         logging.info("Extracting i-vectors from test data")
-        filename = 'test_stat_{}.h5'.format(self.NUM_GUASSIANS)
+        filename = 'test_stat_{}.h5'.format(self.NUM_GAUSSIANS)
         test_stat = sidekit.StatServer.read(os.path.join(self.BASE_DIR, 'stat', filename))
         test_iv = fa.extract_ivectors_single(ubm=ubm,
                                              stat_server=test_stat,
@@ -192,7 +192,7 @@ class IVector(SidekitModel):
                                                         wccn=None
                                                       )
         # Write scores
-        filename = "ivector_scores_cos_{}.h5".format(self.NUM_GUASSIANS)
+        filename = "ivector_scores_cos_{}.h5".format(self.NUM_GAUSSIANS)
         scores_cos.write(os.path.join(self.BASE_DIR, "result", filename))
         
         # Explain the Analysis by writing more readible text file
@@ -200,7 +200,7 @@ class IVector(SidekitModel):
             modelset = list(scores_cos.modelset)
             segset = list(scores_cos.segset)
             scores = np.array(scores_cos.scoremat)
-            filename = "ivector_scores_explained_{}.txt".format(iv.NUM_GUASSIANS)
+            filename = "ivector_scores_explained_{}.txt".format(iv.NUM_GAUSSIANS)
             fout = open(os.path.join(iv.BASE_DIR, "result", filename), "a")
             fout.truncate(0) #clear content
             for seg_idx, seg in enumerate(segset):
@@ -222,7 +222,7 @@ class IVector(SidekitModel):
     def getAccuracy(self):
         import h5py
         # Load scores file
-        filename = "ivector_scores_cos_{}.h5".format(self.NUM_GUASSIANS)
+        filename = "ivector_scores_cos_{}.h5".format(self.NUM_GAUSSIANS)
         filepath = os.path.join(self.BASE_DIR, "result", filename)
         h5 = h5py.File(filepath, mode="r")
         modelset = list(h5["modelset"])
